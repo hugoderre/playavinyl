@@ -62,6 +62,9 @@ export function VinylShelf(): ReactElement {
   const endIdx = Math.min(tracks.length, startIdx + VISIBLE_COUNT)
   const visibleTracks = tracks.slice(startIdx, endIdx)
 
+  // Hide the shelf entirely when focused on the turntable
+  if (sceneState === 'playing') return null
+
   return (
     <group position={[0, 0, 0]}>
       {/* Crate bottom */}

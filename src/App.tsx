@@ -10,6 +10,7 @@ import { useChartTracks } from './hooks/useDeezer'
 import { SearchBar } from './components/ui/SearchBar'
 import { TrackInfoPanel } from './components/ui/TrackInfoPanel'
 import { VinylHoverInfo } from './components/ui/VinylHoverInfo'
+import { BrowsingOverlay } from './components/ui/BrowsingOverlay'
 import { useVinylAnimation } from './hooks/useVinylAnimation'
 import { useAudio } from './hooks/useAudio'
 
@@ -45,6 +46,7 @@ export default function App(): ReactElement {
 
       {/* UI Overlays */}
       <SearchBar />
+      <BrowsingOverlay />
       <TrackInfoPanel stopPlayback={stopPlayback} />
       <VinylHoverInfo />
     </div>
