@@ -7,6 +7,7 @@ import { Turntable } from './components/scene/Turntable'
 import { SceneManager } from './components/scene/SceneManager'
 import { useSceneStore } from './stores/sceneStore'
 import { useChartTracks } from './hooks/useDeezer'
+import { SearchBar } from './components/ui/SearchBar'
 
 export default function App(): ReactElement {
   const setTracks = useSceneStore((s) => s.setTracks)
@@ -36,7 +37,8 @@ export default function App(): ReactElement {
         <Turntable />
       </Canvas>
 
-      {/* UI Overlays will be added in Tasks 13-15 */}
+      {/* UI Overlays */}
+      <SearchBar />
     </div>
   )
 }
