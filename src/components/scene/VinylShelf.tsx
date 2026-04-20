@@ -1,17 +1,34 @@
-import { useRef, useCallback, useEffect, Suspense } from 'react'
+import { useEffect, Suspense } from 'react'
 import type { ReactElement } from 'react'
 import { useThree } from '@react-three/fiber'
-import type { Group } from 'three'
 import { VinylRecord } from './VinylRecord'
 import { useSceneStore } from '../../stores/sceneStore'
 import type { DeezerTrack } from '../../types'
 
-const SLEEVE_SIZE_APPROX = 0.31 // ~31cm vinyl sleeve
-const VINYL_SPACING = 0.02 // gap between vinyls in the shelf
-const VISIBLE_COUNT = 20
+const VINYL_SLOT_SPACING = 0.07 // visible gap between covers
+const VISIBLE_COUNT = 25
+
+// Crate dimensions — long, shallow, open-top display stand
+const CRATE_LENGTH = 12
+const CRATE_DEPTH = 0.45
+const CRATE_BACK_HEIGHT = 0.45 // tall back panel
+const CRATE_FRONT_HEIGHT = 0.1 // low front rim (typical record crate)
+const CRATE_THICKNESS = 0.018
+
+// Vinyls tilted back so covers face camera
+const VINYL_TILT_X = -0.25 // ~14° backward
+const VINYL_BASE_Y = 0.02
+
+// Featured vinyl (active, pulled out in front)
+const FEATURED_SCALE = 1.6
+const FEATURED_OFFSET_Z = 0.6
+const FEATURED_OFFSET_Y = 0.08
+const FEATURED_TILT_X = -0.1 // mostly upright
+
+const WOOD_COLOR = '#6b4423'
+const WOOD_DARK = '#3d2510'
 
 export function VinylShelf(): ReactElement {
-  const groupRef = useRef<Group>(null)
   const tracks = useSceneStore((s) => s.tracks)
   const scrollPosition = useSceneStore((s) => s.scrollPosition)
   const setScrollPosition = useSceneStore((s) => s.setScrollPosition)
@@ -19,14 +36,13 @@ export function VinylShelf(): ReactElement {
   const sceneState = useSceneStore((s) => s.state)
   const { gl } = useThree()
 
-  // Scroll handler
   useEffect(() => {
     if (sceneState !== 'browsing') return
 
     const canvas = gl.domElement
     const handleWheel = (e: WheelEvent): void => {
       e.preventDefault()
-      const delta = e.deltaY * 0.003
+      const delta = e.deltaY * 0.004
       const maxScroll = Math.max(0, tracks.length - 1)
       setScrollPosition(Math.max(0, Math.min(maxScroll, scrollPosition + delta)))
     }
@@ -35,75 +51,89 @@ export function VinylShelf(): ReactElement {
     return () => canvas.removeEventListener('wheel', handleWheel)
   }, [gl, scrollPosition, setScrollPosition, tracks.length, sceneState])
 
-  const handleVinylClick = useCallback(
-    (track: DeezerTrack) => {
-      if (sceneState === 'browsing') {
-        selectVinyl(track.id)
-      }
-    },
-    [selectVinyl, sceneState],
-  )
+  const handleVinylClick = (track: DeezerTrack): void => {
+    if (sceneState === 'browsing') {
+      selectVinyl(track.id)
+    }
+  }
 
-  // Calculate visible vinyls based on scroll position
-  const startIdx = Math.max(0, Math.floor(scrollPosition) - 1)
+  const centerIdx = Math.round(scrollPosition)
+  const startIdx = Math.max(0, centerIdx - Math.floor(VISIBLE_COUNT / 2))
   const endIdx = Math.min(tracks.length, startIdx + VISIBLE_COUNT)
   const visibleTracks = tracks.slice(startIdx, endIdx)
 
   return (
-    <group ref={groupRef}>
-      {/* Shelf furniture — simple box for now, will be refined */}
-      {/* Bottom shelf board */}
-      <mesh position={[0, -0.2, 0]}>
-        <boxGeometry args={[0.6, 0.02, 0.35]} />
-        <meshStandardMaterial color="#5c3a1e" roughness={0.85} metalness={0.05} />
+    <group position={[0, 0, 0]}>
+      {/* Crate bottom */}
+      <mesh position={[0, -CRATE_FRONT_HEIGHT - CRATE_THICKNESS / 2, 0]}>
+        <boxGeometry args={[CRATE_LENGTH, CRATE_THICKNESS, CRATE_DEPTH]} />
+        <meshStandardMaterial color={WOOD_COLOR} roughness={0.85} metalness={0.02} />
       </mesh>
-      {/* Back board */}
-      <mesh position={[0, 0, -0.17]}>
-        <boxGeometry args={[0.6, 0.45, 0.01]} />
-        <meshStandardMaterial color="#4a2e14" roughness={0.9} metalness={0.05} />
+
+      {/* Tall back wall */}
+      <mesh
+        position={[
+          0,
+          -CRATE_FRONT_HEIGHT + CRATE_BACK_HEIGHT / 2 - CRATE_THICKNESS / 2,
+          -CRATE_DEPTH / 2 - CRATE_THICKNESS / 2,
+        ]}
+      >
+        <boxGeometry args={[CRATE_LENGTH, CRATE_BACK_HEIGHT, CRATE_THICKNESS]} />
+        <meshStandardMaterial color={WOOD_DARK} roughness={0.9} metalness={0.02} />
       </mesh>
-      {/* Left side */}
-      <mesh position={[-0.3, 0, 0]}>
-        <boxGeometry args={[0.015, 0.45, 0.35]} />
-        <meshStandardMaterial color="#5c3a1e" roughness={0.85} metalness={0.05} />
+
+      {/* Low front rim */}
+      <mesh
+        position={[
+          0,
+          -CRATE_FRONT_HEIGHT + CRATE_FRONT_HEIGHT / 2 - CRATE_THICKNESS / 2,
+          CRATE_DEPTH / 2 + CRATE_THICKNESS / 2,
+        ]}
+      >
+        <boxGeometry args={[CRATE_LENGTH, CRATE_FRONT_HEIGHT, CRATE_THICKNESS]} />
+        <meshStandardMaterial color={WOOD_COLOR} roughness={0.85} metalness={0.02} />
       </mesh>
-      {/* Right side (extends further to suggest depth) */}
-      <mesh position={[0.3, 0, 0]}>
-        <boxGeometry args={[0.015, 0.45, 0.35]} />
-        <meshStandardMaterial color="#5c3a1e" roughness={0.85} metalness={0.05} />
-      </mesh>
-      {/* Legs */}
+
+      {/* Legs — four legs at corners of the visible portion */}
       {(
         [
-          [-0.28, -0.35, 0.14],
-          [0.28, -0.35, 0.14],
-          [-0.28, -0.35, -0.14],
-          [0.28, -0.35, -0.14],
-        ] as [number, number, number][]
-      ).map((pos, i) => (
-        <mesh key={i} position={pos}>
-          <cylinderGeometry args={[0.01, 0.012, 0.12, 8]} />
-          <meshStandardMaterial color="#3d2510" roughness={0.9} metalness={0.05} />
+          [-1.5, CRATE_DEPTH / 2 - 0.02],
+          [1.5, CRATE_DEPTH / 2 - 0.02],
+          [-1.5, -CRATE_DEPTH / 2 + 0.02],
+          [1.5, -CRATE_DEPTH / 2 + 0.02],
+        ] as [number, number][]
+      ).map(([x, z], i) => (
+        <mesh key={i} position={[x, -CRATE_FRONT_HEIGHT - 0.14, z]}>
+          <cylinderGeometry args={[0.016, 0.022, 0.26, 12]} />
+          <meshStandardMaterial color={WOOD_DARK} roughness={0.9} metalness={0.05} />
         </mesh>
       ))}
 
-      {/* Vinyl records inside the shelf */}
+      {/* Vinyls */}
       <Suspense fallback={null}>
         {visibleTracks.map((track, i) => {
           const globalIdx = startIdx + i
           const offset = globalIdx - scrollPosition
+          const isFeatured = globalIdx === centerIdx
 
-          // Position vinyls along Z axis (depth), tilted slightly
-          const z = offset * (SLEEVE_SIZE_APPROX + VINYL_SPACING)
-          const opacity = offset < 0 ? Math.max(0, 1 + offset) : 1
+          const inCrateX = offset * VINYL_SLOT_SPACING
+          const inCrateY = VINYL_BASE_Y
+          const inCrateZ = 0
+
+          // Featured: centered in X, pulled forward, raised, less tilted
+          const targetX = isFeatured ? 0 : inCrateX
+          const targetY = isFeatured ? VINYL_BASE_Y + FEATURED_OFFSET_Y : inCrateY
+          const targetZ = isFeatured ? FEATURED_OFFSET_Z : inCrateZ
+          const targetTilt = isFeatured ? FEATURED_TILT_X : VINYL_TILT_X
+          const targetScale = isFeatured ? FEATURED_SCALE : 1
 
           return (
             <VinylRecord
               key={track.id}
               track={track}
-              position={[0, 0, z * -1]}
-              rotation={[0, 0, 0]}
-              scale={opacity > 0.1 ? 1 : 0}
+              position={[targetX, targetY, targetZ]}
+              rotation={[targetTilt, 0, 0]}
+              scale={targetScale}
               onClick={() => handleVinylClick(track)}
             />
           )

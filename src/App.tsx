@@ -25,11 +25,11 @@ export default function App(): ReactElement {
   const { stopPlayback } = useAudio()
 
   return (
-    <div className="relative w-full h-full">
+    <div className="fixed inset-0 overflow-hidden">
       {/* 3D Scene */}
       <Canvas
         camera={{ position: [0, 0.3, 1.5], fov: 50 }}
-        className="absolute inset-0"
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
         gl={{ antialias: true, alpha: false }}
         onCreated={({ gl }) => {
           gl.setClearColor('#0a0a0a')
