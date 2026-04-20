@@ -6,20 +6,19 @@ export default async function handler(
   req: VercelRequest,
   res: VercelResponse,
 ): Promise<void> {
-  const { path } = req.query
-  const segments = Array.isArray(path) ? path.join('/') : (path ?? '')
+  const { path, ...rest } = req.query
 
-  const url = new URL(`/${segments}`, DEEZER_BASE)
+  const pathStr = Array.isArray(path) ? path.join('/') : (path ?? '')
+  const url = new URL(`/${pathStr}`, DEEZER_BASE)
 
-  for (const [key, value] of Object.entries(req.query)) {
-    if (key === 'path') continue
+  for (const [key, value] of Object.entries(rest)) {
     if (typeof value === 'string') {
       url.searchParams.set(key, value)
     }
   }
 
   const response = await fetch(url.toString(), {
-    headers: { 'Accept': 'application/json' },
+    headers: { Accept: 'application/json' },
   })
 
   const data = await response.json()
