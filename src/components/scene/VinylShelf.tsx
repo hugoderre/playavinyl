@@ -4,21 +4,19 @@ import { useThree } from '@react-three/fiber'
 import { Vector3, Quaternion } from 'three'
 import { VinylRecord } from './VinylRecord'
 import { useSceneStore } from '../../stores/sceneStore'
+import { useDominantColor, rgbToHex } from '../../hooks/useDominantColor'
 import type { DeezerTrack } from '../../types'
 
 const VISIBLE_COUNT = 18
 
-// Diagonal trajectory: near-low-left → far-high-right
-// The nearest vinyl sits in the foreground-center; as index increases
-// each vinyl recedes up-and-to-the-right, matching MOCK-VINYL-FLOW.html.
-// Diagonal goes from front-left-low to back-right-up (matches MOCK exactly)
+// Diagonal trajectory in world space — matches MOCK-VINYL-FLOW.html
+// Near vinyl sits foreground-left-low, far one recedes back-up-right.
 const NEAR_POINT = new Vector3(-0.8, 0.0, 0.9)
 const FAR_POINT = new Vector3(2.2, 0.9, -2.8)
+
 const SCALE_NEAR = 1.0
 const SCALE_FAR = 0.14
-
-// Vinyls stand with a slight back-tilt so covers face the camera
-const VINYL_TILT_X = -0.15
+const VINYL_TILT_X = -0.04 // nearly face-on (subtle lean)
 
 function easeOut(t: number): number {
   return 1 - Math.pow(1 - t, 3)
@@ -59,24 +57,24 @@ export function VinylShelf(): ReactElement | null {
 
   if (sceneState === 'playing') return null
 
-  // Render a window of vinyls starting at floor(scrollPosition) - 1
   const baseIdx = Math.floor(scrollPosition)
   const startIdx = Math.max(0, baseIdx - 1)
   const endIdx = Math.min(tracks.length, startIdx + VISIBLE_COUNT + 1)
   const visibleTracks = tracks.slice(startIdx, endIdx)
   const frac = scrollPosition - Math.floor(scrollPosition)
 
+  const centerIdx = Math.round(scrollPosition)
+  const featuredTrack = tracks[centerIdx]
+
   return (
     <group>
-      {/* Wooden rail running along the diagonal path — suggests a display shelf */}
-      <DiagonalRail />
+      <DiagonalShelf />
+      {featuredTrack && <FeaturedGlow track={featuredTrack} />}
 
-      {/* Vinyls positioned along the diagonal */}
       <Suspense fallback={null}>
         {visibleTracks.map((track, i) => {
           const globalIdx = startIdx + i
-          // depth: how far this vinyl is from the camera-front vinyl (0 = featured)
-          const depth = (globalIdx - baseIdx) - frac
+          const depth = globalIdx - baseIdx - frac
           if (depth < -1 || depth > VISIBLE_COUNT) return null
 
           const t = Math.max(0, Math.min(1, depth / (VISIBLE_COUNT - 1)))
@@ -87,7 +85,6 @@ export function VinylShelf(): ReactElement | null {
           const z = lerp(NEAR_POINT.z, FAR_POINT.z, e)
           const scale = lerp(SCALE_NEAR, SCALE_FAR, e)
 
-          // Front-most vinyl fades in from left (when depth goes negative)
           const opacity = depth < 0 ? Math.max(0, 1 + depth) : 1
           const finalScale = opacity > 0.05 ? scale * opacity : 0
 
@@ -107,10 +104,52 @@ export function VinylShelf(): ReactElement | null {
   )
 }
 
-// A wooden crate that wraps the vinyl diagonal — bottom plank, back wall, low front rim.
-// The whole group is rotated via a quaternion so its local Z axis lines up
-// perfectly with the NEAR→FAR diagonal (vinyls naturally sit inside).
-function DiagonalRail(): ReactElement {
+// Colored point-light that follows the featured (front-most) vinyl,
+// tinting the scene with the dominant color of its cover art.
+function FeaturedGlow({ track }: { track: DeezerTrack }): ReactElement | null {
+  const color = useDominantColor(track.album.cover_medium)
+  if (!color) return null
+  const hex = rgbToHex(color)
+  return (
+    <>
+      {/* Big colored halo behind the featured vinyl — primary atmospheric glow */}
+      <pointLight
+        position={[NEAR_POINT.x + 0.15, NEAR_POINT.y + 0.25, NEAR_POINT.z - 0.5]}
+        intensity={12}
+        color={hex}
+        distance={3.5}
+        decay={1.6}
+      />
+      {/* Closer pop to lift the featured cover */}
+      <pointLight
+        position={[NEAR_POINT.x - 0.1, NEAR_POINT.y + 0.1, NEAR_POINT.z + 0.15]}
+        intensity={3.5}
+        color={hex}
+        distance={1.6}
+        decay={2}
+      />
+      {/* Rim light from below — warm edge underneath */}
+      <pointLight
+        position={[NEAR_POINT.x - 0.05, NEAR_POINT.y - 0.3, NEAR_POINT.z - 0.05]}
+        intensity={2.2}
+        color={hex}
+        distance={1.3}
+        decay={2}
+      />
+    </>
+  )
+}
+
+// Wooden crate aligned with the NEAR→FAR diagonal.
+// The whole structure is rotated via a quaternion so local +Z runs along
+// the diagonal. Once rotated, LOCAL axes map to world as follows (given
+// our specific direction):
+//   local +X world ≈ (-0.62, -0.48, -0.62) → deeper into scene (away from camera)
+//   local +Y world ≈ (-0.48,  0.85, -0.19) → mostly up (with a lean back)
+//   local +Z world ≈ ( 0.62,  0.19, -0.76) → along the diagonal
+// So: back wall goes at local +X (behind vinyls), floor below at local -Y,
+// front rim at local -X (foreground side).
+function DiagonalShelf(): ReactElement {
   const { position, quaternion, length } = useMemo(() => {
     const dir = new Vector3().subVectors(FAR_POINT, NEAR_POINT)
     const len = dir.length()
@@ -122,31 +161,45 @@ function DiagonalRail(): ReactElement {
     return { position: mid, quaternion: q, length: len }
   }, [])
 
-  const quatTuple: [number, number, number, number] = [
+  const qt: [number, number, number, number] = [
     quaternion.x,
     quaternion.y,
     quaternion.z,
     quaternion.w,
   ]
 
-  const extra = 0.4
+  const extra = 0.15 // minimal overhang past NEAR/FAR
+  const totalLen = length + extra
 
   return (
-    <group position={position} quaternion={quatTuple}>
-      {/* Bottom plank — the vinyls stand on this */}
-      <mesh position={[0, -0.175, 0]}>
-        <boxGeometry args={[0.36, 0.02, length + extra]} />
+    <group position={position} quaternion={qt}>
+      {/* Floor plank — same width as a sleeve, just enough to "hold" the vinyls */}
+      <mesh position={[0, -0.19, 0]}>
+        <boxGeometry args={[0.33, 0.018, totalLen]} />
         <meshStandardMaterial color="#5c3a1e" roughness={0.85} metalness={0.05} />
       </mesh>
-      {/* Short front rim — hints at a crate without blocking the covers */}
-      <mesh position={[0.18, -0.12, 0]}>
-        <boxGeometry args={[0.012, 0.1, length + extra]} />
+
+      {/* Back panel — taller, behind vinyls from camera's view */}
+      <mesh position={[0.16, 0.0, 0]}>
+        <boxGeometry args={[0.012, 0.38, totalLen]} />
+        <meshStandardMaterial color="#3d2510" roughness={0.9} metalness={0.02} />
+      </mesh>
+
+      {/* Low front rim */}
+      <mesh position={[-0.16, -0.13, 0]}>
+        <boxGeometry args={[0.012, 0.12, totalLen]} />
         <meshStandardMaterial color="#6b4423" roughness={0.85} metalness={0.05} />
       </mesh>
-      {/* Short back rim — subtle darker edge behind the vinyls */}
-      <mesh position={[-0.18, -0.12, 0]}>
-        <boxGeometry args={[0.012, 0.1, length + extra]} />
-        <meshStandardMaterial color="#3d2510" roughness={0.9} metalness={0.02} />
+
+      {/* Warm LED strip tucked behind the back panel */}
+      <mesh position={[0.155, -0.17, 0]}>
+        <boxGeometry args={[0.006, 0.006, totalLen * 0.96]} />
+        <meshStandardMaterial
+          color="#ffb066"
+          emissive="#ffb066"
+          emissiveIntensity={2.2}
+          roughness={0.5}
+        />
       </mesh>
     </group>
   )
