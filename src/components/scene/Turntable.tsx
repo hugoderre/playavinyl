@@ -30,16 +30,16 @@ function VinylOnPlatter({ track }: VinylOnPlatterProps): ReactElement {
 
   return (
     <group ref={discRef} position={[0, 0.018, 0]}>
-      {/* Disc body (black) */}
-      <mesh rotation={[Math.PI / 2, 0, 0]}>
+      {/* Disc body (black, lies flat on the platter) */}
+      <mesh>
         <cylinderGeometry
           args={[PLATTER_RADIUS - 0.005, PLATTER_RADIUS - 0.005, 0.002, 64]}
         />
         <meshStandardMaterial color="#0a0a0a" roughness={0.35} metalness={0.7} />
       </mesh>
-      {/* Colored center label from album cover */}
-      <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0.001, 0]}>
-        <cylinderGeometry args={[0.045, 0.045, 0.003, 32]} />
+      {/* Colored center label from album cover (slightly above the disc) */}
+      <mesh position={[0, 0.0015, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[0.045, 32]} />
         <meshStandardMaterial map={coverTexture} roughness={0.55} metalness={0.1} />
       </mesh>
     </group>
