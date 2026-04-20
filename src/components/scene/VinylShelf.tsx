@@ -1,7 +1,7 @@
-import { useEffect, Suspense } from 'react'
+import { useEffect, useMemo, Suspense } from 'react'
 import type { ReactElement } from 'react'
 import { useThree } from '@react-three/fiber'
-import { Vector3 } from 'three'
+import { Vector3, Quaternion } from 'three'
 import { VinylRecord } from './VinylRecord'
 import { useSceneStore } from '../../stores/sceneStore'
 import type { DeezerTrack } from '../../types'
@@ -107,29 +107,45 @@ export function VinylShelf(): ReactElement | null {
   )
 }
 
-// A thin wooden rail following the NEAR→FAR diagonal, hints at a physical display
+// A wooden crate that wraps the vinyl diagonal — bottom plank, back wall, low front rim.
+// The whole group is rotated via a quaternion so its local Z axis lines up
+// perfectly with the NEAR→FAR diagonal (vinyls naturally sit inside).
 function DiagonalRail(): ReactElement {
-  const dir = new Vector3().subVectors(FAR_POINT, NEAR_POINT)
-  const length = dir.length()
-  const mid = new Vector3().addVectors(NEAR_POINT, FAR_POINT).multiplyScalar(0.5)
-  // Place rail slightly below the vinyls' base
-  mid.y -= 0.17
-  // Compute Y-axis rotation so the rail aligns with the X-Z projection of dir
-  const angleY = Math.atan2(dir.x, -dir.z)
-  // Angle around the rail's local X so it rises with dir.y
-  const horizontalLen = Math.sqrt(dir.x * dir.x + dir.z * dir.z)
-  const angleX = Math.atan2(dir.y, horizontalLen)
+  const { position, quaternion, length } = useMemo(() => {
+    const dir = new Vector3().subVectors(FAR_POINT, NEAR_POINT)
+    const len = dir.length()
+    const mid = new Vector3().addVectors(NEAR_POINT, FAR_POINT).multiplyScalar(0.5)
+    const q = new Quaternion().setFromUnitVectors(
+      new Vector3(0, 0, 1),
+      dir.clone().normalize(),
+    )
+    return { position: mid, quaternion: q, length: len }
+  }, [])
+
+  const quatTuple: [number, number, number, number] = [
+    quaternion.x,
+    quaternion.y,
+    quaternion.z,
+    quaternion.w,
+  ]
+
+  const extra = 0.4
 
   return (
-    <group position={mid} rotation={[angleX, angleY, 0]}>
-      {/* Main rail plank */}
-      <mesh>
-        <boxGeometry args={[0.08, 0.015, length]} />
+    <group position={position} quaternion={quatTuple}>
+      {/* Bottom plank — the vinyls stand on this */}
+      <mesh position={[0, -0.175, 0]}>
+        <boxGeometry args={[0.36, 0.02, length + extra]} />
         <meshStandardMaterial color="#5c3a1e" roughness={0.85} metalness={0.05} />
       </mesh>
-      {/* Back wall running parallel to the rail, behind the vinyls */}
-      <mesh position={[0, 0.15, -0.2]}>
-        <boxGeometry args={[0.01, 0.45, length]} />
+      {/* Short front rim — hints at a crate without blocking the covers */}
+      <mesh position={[0.18, -0.12, 0]}>
+        <boxGeometry args={[0.012, 0.1, length + extra]} />
+        <meshStandardMaterial color="#6b4423" roughness={0.85} metalness={0.05} />
+      </mesh>
+      {/* Short back rim — subtle darker edge behind the vinyls */}
+      <mesh position={[-0.18, -0.12, 0]}>
+        <boxGeometry args={[0.012, 0.1, length + extra]} />
         <meshStandardMaterial color="#3d2510" roughness={0.9} metalness={0.02} />
       </mesh>
     </group>
