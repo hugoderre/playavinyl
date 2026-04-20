@@ -6,6 +6,7 @@ import { VinylShelf } from './components/scene/VinylShelf'
 import { Turntable } from './components/scene/Turntable'
 import { SceneManager } from './components/scene/SceneManager'
 import { FlyingVinyl } from './components/scene/FlyingVinyl'
+import { DustParticles } from './components/scene/DustParticles'
 import { useSceneStore } from './stores/sceneStore'
 import { useChartTracks } from './hooks/useDeezer'
 import { SearchBar } from './components/ui/SearchBar'
@@ -62,6 +63,15 @@ export default function App(): ReactElement {
           </Suspense>
         )}
         <Turntable />
+        {/* Dust motes in the turntable spotlight — tight volume, subtle */}
+        <DustParticles
+          center={[8, 0.85, 0.4]}
+          radius={0.45}
+          count={18}
+          color="#fff0d8"
+          size={0.028}
+          opacity={0.25}
+        />
       </Canvas>
 
       <SearchBar />
