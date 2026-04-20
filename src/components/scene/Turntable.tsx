@@ -69,13 +69,18 @@ export function Turntable(): ReactElement {
       {/* Base / plinth */}
       <mesh position={[0, -0.02, 0]}>
         <boxGeometry args={[BASE_WIDTH, BASE_HEIGHT, BASE_DEPTH]} />
-        <meshStandardMaterial color="#1a1a1a" roughness={0.4} metalness={0.6} />
+        <meshStandardMaterial color="#2a2a2e" roughness={0.25} metalness={0.7} />
       </mesh>
 
-      {/* Platter */}
+      {/* Platter — brushed metal with rim detail */}
       <mesh ref={platterRef} position={[0, 0.01, 0]}>
         <cylinderGeometry args={[PLATTER_RADIUS, PLATTER_RADIUS, 0.008, 64]} />
-        <meshStandardMaterial color="#222222" roughness={0.3} metalness={0.7} />
+        <meshStandardMaterial color="#3a3a3e" roughness={0.25} metalness={0.85} />
+      </mesh>
+      {/* Platter rubber mat — subtle circle on top */}
+      <mesh position={[0, 0.0145, 0]}>
+        <cylinderGeometry args={[PLATTER_RADIUS * 0.96, PLATTER_RADIUS * 0.96, 0.001, 64]} />
+        <meshStandardMaterial color="#1a1a1a" roughness={0.9} metalness={0.1} />
       </mesh>
 
       {/* Platter center spindle */}
