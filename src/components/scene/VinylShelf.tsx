@@ -31,6 +31,7 @@ export function VinylShelf(): ReactElement | null {
   const scrollPosition = useSceneStore((s) => s.scrollPosition)
   const setScrollPosition = useSceneStore((s) => s.setScrollPosition)
   const selectVinyl = useSceneStore((s) => s.selectVinyl)
+  const selectedVinylId = useSceneStore((s) => s.selectedVinylId)
   const sceneState = useSceneStore((s) => s.state)
   const { gl } = useThree()
 
@@ -73,6 +74,9 @@ export function VinylShelf(): ReactElement | null {
 
       <Suspense fallback={null}>
         {visibleTracks.map((track, i) => {
+          // Hide the vinyl that's currently flying to the turntable
+          if (sceneState === 'animating' && track.id === selectedVinylId) return null
+
           const globalIdx = startIdx + i
           const depth = globalIdx - baseIdx - frac
           if (depth < -1 || depth > VISIBLE_COUNT) return null

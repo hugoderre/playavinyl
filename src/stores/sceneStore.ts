@@ -5,6 +5,7 @@ interface SceneStoreState {
   state: SceneState
   scrollPosition: number
   selectedVinylId: number | null
+  animationStartedAt: number
   tracks: DeezerTrack[]
   albumTracks: DeezerTrack[]
 
@@ -20,13 +21,21 @@ export const useSceneStore = create<SceneStoreState>((set) => ({
   state: 'browsing',
   scrollPosition: 0,
   selectedVinylId: null,
+  animationStartedAt: 0,
   tracks: [],
   albumTracks: [],
 
   setState: (state) => set({ state }),
   setScrollPosition: (scrollPosition) => set({ scrollPosition }),
-  selectVinyl: (trackId) => set({ selectedVinylId: trackId, state: 'animating' }),
-  clearSelection: () => set({ selectedVinylId: null, state: 'browsing', albumTracks: [] }),
+  selectVinyl: (trackId) =>
+    set({ selectedVinylId: trackId, state: 'animating', animationStartedAt: Date.now() }),
+  clearSelection: () =>
+    set({
+      selectedVinylId: null,
+      state: 'browsing',
+      albumTracks: [],
+      animationStartedAt: 0,
+    }),
   setTracks: (tracks) => set({ tracks }),
   setAlbumTracks: (albumTracks) => set({ albumTracks }),
 }))
