@@ -6,7 +6,11 @@ import { getAlbumTracks } from '../../hooks/useDeezer'
 import { formatDuration, formatProgress } from '../../utils/formatters'
 import type { DeezerTrack } from '../../types'
 
-export function TrackInfoPanel(): ReactElement | null {
+interface TrackInfoPanelProps {
+  stopPlayback: () => void
+}
+
+export function TrackInfoPanel({ stopPlayback }: TrackInfoPanelProps): ReactElement | null {
   const sceneState = useSceneStore((s) => s.state)
   const currentTrack = usePlayerStore((s) => s.currentTrack)
   const isPlaying = usePlayerStore((s) => s.isPlaying)
@@ -14,6 +18,7 @@ export function TrackInfoPanel(): ReactElement | null {
   const albumTracks = useSceneStore((s) => s.albumTracks)
   const setAlbumTracks = useSceneStore((s) => s.setAlbumTracks)
   const selectVinyl = useSceneStore((s) => s.selectVinyl)
+  const clearSelection = useSceneStore((s) => s.clearSelection)
 
   // Load album tracks when a track is playing
   // Intentionally omit `currentTrack` from deps — we only re-fetch when the album ID changes
@@ -92,6 +97,17 @@ export function TrackInfoPanel(): ReactElement | null {
         >
           Écouter sur Deezer ↗
         </a>
+
+        {/* Back to shelf */}
+        <button
+          onClick={() => {
+            clearSelection()
+            stopPlayback()
+          }}
+          className="mt-4 w-full py-2 rounded-lg bg-white/5 text-[var(--color-text-muted)] text-xs hover:bg-white/10 hover:text-[var(--color-text)] transition-colors cursor-pointer"
+        >
+          ← Retour au bac
+        </button>
 
         {/* Album tracklist */}
         {albumTracks.length > 0 && (

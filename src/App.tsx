@@ -11,6 +11,7 @@ import { SearchBar } from './components/ui/SearchBar'
 import { TrackInfoPanel } from './components/ui/TrackInfoPanel'
 import { VinylHoverInfo } from './components/ui/VinylHoverInfo'
 import { useVinylAnimation } from './hooks/useVinylAnimation'
+import { useAudio } from './hooks/useAudio'
 
 export default function App(): ReactElement {
   const setTracks = useSceneStore((s) => s.setTracks)
@@ -21,6 +22,7 @@ export default function App(): ReactElement {
 
   useChartTracks(handleChartTracks)
   useVinylAnimation()
+  const { stopPlayback } = useAudio()
 
   return (
     <div className="relative w-full h-full">
@@ -43,7 +45,7 @@ export default function App(): ReactElement {
 
       {/* UI Overlays */}
       <SearchBar />
-      <TrackInfoPanel />
+      <TrackInfoPanel stopPlayback={stopPlayback} />
       <VinylHoverInfo />
     </div>
   )
