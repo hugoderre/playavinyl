@@ -10,6 +10,7 @@ import { useChartTracks } from './hooks/useDeezer'
 import { SearchBar } from './components/ui/SearchBar'
 import { TrackInfoPanel } from './components/ui/TrackInfoPanel'
 import { VinylHoverInfo } from './components/ui/VinylHoverInfo'
+import { useVinylAnimation } from './hooks/useVinylAnimation'
 
 export default function App(): ReactElement {
   const setTracks = useSceneStore((s) => s.setTracks)
@@ -19,6 +20,7 @@ export default function App(): ReactElement {
   }, [setTracks])
 
   useChartTracks(handleChartTracks)
+  useVinylAnimation()
 
   return (
     <div className="relative w-full h-full">
