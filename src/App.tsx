@@ -1,6 +1,6 @@
-import React from 'react'
+import type { ReactElement } from 'react'
 
-export default function App(): React.ReactElement {
+export default function App(): ReactElement {
   return (
     <div className="relative w-full h-full">
       {/* R3F Canvas will go here */}
