@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import type { ReactElement } from 'react'
 import { useLoader } from '@react-three/fiber'
+import type { ThreeEvent } from '@react-three/fiber'
 import { TextureLoader, DoubleSide } from 'three'
 import type { Mesh, Group } from 'three'
 import type { DeezerTrack } from '../../types'
@@ -34,16 +35,22 @@ export function VinylRecord({
 
   const coverTexture = useLoader(TextureLoader, track.album.cover_medium)
 
-  const handlePointerEnter = (): void => {
+  const handlePointerEnter = (e: ThreeEvent<PointerEvent>): void => {
     setHovered(true)
     onPointerEnter?.()
     document.body.style.cursor = 'pointer'
+    window.dispatchEvent(new CustomEvent('vinyl-hover', {
+      detail: { track, x: e.nativeEvent.clientX, y: e.nativeEvent.clientY },
+    }))
   }
 
   const handlePointerLeave = (): void => {
     setHovered(false)
     onPointerLeave?.()
     document.body.style.cursor = 'default'
+    window.dispatchEvent(new CustomEvent('vinyl-hover', {
+      detail: { track: null, x: 0, y: 0 },
+    }))
   }
 
   return (
@@ -56,7 +63,7 @@ export function VinylRecord({
       {/* Sleeve — square box with cover art */}
       <mesh
         onClick={onClick}
-        onPointerEnter={handlePointerEnter}
+        onPointerEnter={(e) => handlePointerEnter(e)}
         onPointerLeave={handlePointerLeave}
       >
         <boxGeometry args={[SLEEVE_SIZE, SLEEVE_SIZE, 0.005]} />
