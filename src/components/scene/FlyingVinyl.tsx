@@ -13,21 +13,27 @@ interface FlyingVinylProps {
 }
 
 // START_POS matches the hero vinyl's origin in VinylShelf.
-// END_POS is the turntable platter.
+// END_POS matches VinylOnPlatter's world position exactly so the disc lands
+// in place — no teleport at hand-off when FlyingVinyl unmounts.
 const START_POS = new Vector3(0, 0, 0)
-const END_POS = new Vector3(8, 0.02, 0)
+const END_POS = new Vector3(8, 0.018, 0)
 const ARC_HEIGHT = 1.2
 
 const SLEEVE_SIZE = 0.31
 const SLEEVE_THICKNESS = 0.006
 const DISC_RADIUS = 0.145
 const DISC_THICKNESS = 0.003
+const DISC_EMERGE_OFFSET = 0.45
 
 // Phase breakpoints (0..1 of total progress)
 const DISC_EMERGE_START = 0.15
 const DISC_EMERGE_END = 0.45
 const SLEEVE_FADE_START = 0.45
 const SLEEVE_FADE_END = 0.6
+// As the sleeve fades, the disc slides BACK to the group's center so it lands
+// exactly on the platter spindle instead of 45cm off to the right.
+const DISC_RECENTER_START = 0.55
+const DISC_RECENTER_END = 0.92
 
 function smoothstep(edge0: number, edge1: number, x: number): number {
   const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)))
@@ -64,10 +70,13 @@ export function FlyingVinyl({
       )
     }
 
-    // Disc slides out of the sleeve (local X offset grows 0 → ~0.4)
+    // Disc slides out of the sleeve (offset 0 → 0.45), then slides back to
+    // the group's center as the sleeve fades, so it lands exactly on the
+    // platter instead of 45cm off to the right.
     if (discRef.current) {
       const emerge = smoothstep(DISC_EMERGE_START, DISC_EMERGE_END, rawProgress)
-      discRef.current.position.x = emerge * 0.45
+      const recenter = smoothstep(DISC_RECENTER_START, DISC_RECENTER_END, rawProgress)
+      discRef.current.position.x = DISC_EMERGE_OFFSET * emerge * (1 - recenter)
       // Disc starts UPRIGHT alongside the sleeve, then tilts flat for its
       // landing on the platter. Cylinder geometry defaults to flat (axis Y),
       // so the upright pose is rotation.x = -PI/2.

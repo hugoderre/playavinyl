@@ -10,6 +10,11 @@ interface VinylRecordProps {
   rotation?: [number, number, number]
   scale?: number
   opacity?: number
+  // When false, the record is hint-only: it shows a hover tooltip but the
+  // mesh isn't clickable, the cursor doesn't change, and we don't add a
+  // forgiving click-catcher. Only the hero is interactive — clicks on the
+  // peek edges of stack records would otherwise feel like off-by-one bugs.
+  interactive?: boolean
   onClick?: () => void
   onPointerEnter?: () => void
   onPointerLeave?: () => void
@@ -17,6 +22,10 @@ interface VinylRecordProps {
 
 const SLEEVE_SIZE = 0.31
 const SLEEVE_THICKNESS = 0.006
+// Forgiving click target — slightly larger than the visible cover so small
+// over- or under-shoots still register as a click on the hero.
+const HITBOX_SCALE_X = 1.2
+const HITBOX_SCALE_Y = 1.12
 
 export function VinylRecord({
   track,
@@ -24,6 +33,7 @@ export function VinylRecord({
   rotation = [0, 0, 0],
   scale = 1,
   opacity = 1,
+  interactive = false,
   onClick,
   onPointerEnter,
   onPointerLeave,
@@ -32,7 +42,7 @@ export function VinylRecord({
 
   const handlePointerEnter = (e: ThreeEvent<PointerEvent>): void => {
     onPointerEnter?.()
-    document.body.style.cursor = 'pointer'
+    if (interactive) document.body.style.cursor = 'pointer'
     window.dispatchEvent(
       new CustomEvent('vinyl-hover', {
         detail: { track, x: e.nativeEvent.clientX, y: e.nativeEvent.clientY },
@@ -42,7 +52,7 @@ export function VinylRecord({
 
   const handlePointerLeave = (): void => {
     onPointerLeave?.()
-    document.body.style.cursor = 'default'
+    if (interactive) document.body.style.cursor = 'default'
     window.dispatchEvent(
       new CustomEvent('vinyl-hover', {
         detail: { track: null, x: 0, y: 0 },
@@ -52,9 +62,8 @@ export function VinylRecord({
 
   return (
     <group position={position} rotation={rotation} scale={scale}>
-      {/* Sleeve — thin flat box with cover art on the front face */}
+      {/* Visible sleeve with cover art */}
       <mesh
-        onClick={onClick}
         onPointerEnter={(e) => handlePointerEnter(e)}
         onPointerLeave={handlePointerLeave}
       >
@@ -68,6 +77,22 @@ export function VinylRecord({
           opacity={opacity}
         />
       </mesh>
+
+      {/* Forgiving invisible click-catcher — only on the interactive (hero)
+          record. Sits just in front of the visible mesh so it always wins the
+          raycast tie, and is sized 1.2× × 1.12× so small mis-aims still land. */}
+      {interactive && onClick && (
+        <mesh position={[0, 0, SLEEVE_THICKNESS]} onClick={onClick}>
+          <boxGeometry
+            args={[
+              SLEEVE_SIZE * HITBOX_SCALE_X,
+              SLEEVE_SIZE * HITBOX_SCALE_Y,
+              SLEEVE_THICKNESS * 0.5,
+            ]}
+          />
+          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+        </mesh>
+      )}
     </group>
   )
 }

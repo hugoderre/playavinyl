@@ -193,8 +193,10 @@ export function VinylShelf(): ReactElement | null {
           const p = placementForDepth(depth)
           if (p.opacity < 0.02) return null
 
-          // The hero (depth ≈ 0) gets a hover-scale wrapper so it grows
-          // subtly when the user mouses over — clear "I'm clickable" signal.
+          // Only the hero (depth ≈ 0) is interactive: clickable, gets the
+          // hover-scale signal and a forgiving hitbox. Stack records are
+          // hint-only — clicking their peek edges would feel like an
+          // off-by-one bug.
           const isHero = Math.abs(depth) < 0.5
           const recordEl = (
             <VinylRecord
@@ -202,7 +204,12 @@ export function VinylShelf(): ReactElement | null {
               position={[p.x, p.y, p.z]}
               rotation={[0, p.rotY, 0]}
               opacity={p.opacity}
-              onClick={() => sceneState === 'browsing' && selectVinyl(track.id)}
+              interactive={isHero && sceneState === 'browsing'}
+              onClick={
+                isHero && sceneState === 'browsing'
+                  ? () => selectVinyl(track.id)
+                  : undefined
+              }
               onPointerEnter={isHero ? () => { heroHoverRef.current = true } : undefined}
               onPointerLeave={isHero ? () => { heroHoverRef.current = false } : undefined}
             />
