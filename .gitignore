@@ -24,9 +24,7 @@ dist-ssr
 *.sw?
 .vercel
 
-# Playwright/Claude testing artifacts
+# Playwright/Claude testing artifacts (root-level screenshots only — real
+# image assets live in src/assets/)
 .playwright-mcp/
-hero-rebuild-*.png
-hero-scroll-*.png
-hero-breathing.png
-flying-mid*.png
+/*.png
