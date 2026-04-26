@@ -12,10 +12,11 @@ interface FlyingVinylProps {
   durationMs: number
 }
 
-// Keep these in sync with the shelf's NEAR_POINT and the turntable's position.
-const START_POS = new Vector3(-0.8, 0.0, 0.9)
+// START_POS matches the hero vinyl's origin in VinylShelf.
+// END_POS is the turntable platter.
+const START_POS = new Vector3(0, 0, 0)
 const END_POS = new Vector3(8, 0.02, 0)
-const ARC_HEIGHT = 1.4
+const ARC_HEIGHT = 1.2
 
 const SLEEVE_SIZE = 0.31
 const SLEEVE_THICKNESS = 0.006

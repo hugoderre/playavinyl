@@ -72,7 +72,25 @@ export default function App(): ReactElement {
           size={0.028}
           opacity={0.25}
         />
+        {/* Dust around the hero record — atmosphere, not decoration */}
+        <DustParticles
+          center={[0, 0.1, 0.35]}
+          radius={0.55}
+          count={22}
+          color="#fff0d8"
+          size={0.022}
+          opacity={0.18}
+        />
       </Canvas>
+
+      {/* Soft vignette — pulls the eye toward center without a hard frame */}
+      <div
+        className="pointer-events-none absolute inset-0 z-10"
+        style={{
+          background:
+            'radial-gradient(ellipse at center, transparent 38%, rgba(0,0,0,0.55) 100%)',
+        }}
+      />
 
       <SearchBar />
       <BrowsingOverlay />

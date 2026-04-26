@@ -9,6 +9,7 @@ interface VinylRecordProps {
   position: [number, number, number]
   rotation?: [number, number, number]
   scale?: number
+  opacity?: number
   onClick?: () => void
   onPointerEnter?: () => void
   onPointerLeave?: () => void
@@ -22,6 +23,7 @@ export function VinylRecord({
   position,
   rotation = [0, 0, 0],
   scale = 1,
+  opacity = 1,
   onClick,
   onPointerEnter,
   onPointerLeave,
@@ -62,6 +64,8 @@ export function VinylRecord({
           side={DoubleSide}
           roughness={0.75}
           metalness={0.0}
+          transparent={opacity < 1}
+          opacity={opacity}
         />
       </mesh>
     </group>

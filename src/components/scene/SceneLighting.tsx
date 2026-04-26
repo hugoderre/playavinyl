@@ -22,15 +22,15 @@ export function SceneLighting(): ReactElement {
 
   return (
     <>
-      {/* Neutral ambient — keeps scene readable */}
-      <ambientLight intensity={0.55} color="#d8d0c4" />
+      {/* Low ambient — keeps the hero pop forward, lets the dominant-color glow do the work */}
+      <ambientLight intensity={0.32} color="#d8d0c4" />
 
-      {/* Soft key light from above-front, covers the shelf area */}
+      {/* Tight warm key light from above-front, focused on the hero zone */}
       <pointLight
-        position={[0, 2.4, 2]}
-        intensity={18}
+        position={[0, 1.6, 1.2]}
+        intensity={14}
         color="#fff0d8"
-        distance={10}
+        distance={5}
         decay={2}
       />
 

@@ -1,25 +1,70 @@
-import { useEffect, useMemo, Suspense } from 'react'
+import { useEffect, useRef, Suspense } from 'react'
 import type { ReactElement } from 'react'
-import { useThree } from '@react-three/fiber'
-import { Vector3, Quaternion } from 'three'
+import { useThree, useFrame } from '@react-three/fiber'
+import type { Group } from 'three'
 import { VinylRecord } from './VinylRecord'
 import { useSceneStore } from '../../stores/sceneStore'
 import { useDominantColor, rgbToHex } from '../../hooks/useDominantColor'
 import type { DeezerTrack } from '../../types'
 
-const VISIBLE_COUNT = 24
+// One vinyl is the hero, fully facing the camera. Everything else is
+// hinted: only the right edge of the next 6 records peeks out, like
+// a wallet of cards. Steve Jobs filter — no clutter, just the one
+// you're meant to listen to.
 
-// Diagonal trajectory in world space — matches MOCK-VINYL-FLOW.html
-// Near vinyl sits foreground-left-low, far one recedes back-up-right.
-const NEAR_POINT = new Vector3(-0.8, 0.0, 0.9)
-const FAR_POINT = new Vector3(2.2, 0.9, -2.8)
+const STACK_DEPTH = 6
 
-const SCALE_NEAR = 1.0
-const SCALE_FAR = 0.14
-const VINYL_TILT_X = -0.04 // nearly face-on (subtle lean)
+const STACK_X_PER_DEPTH = 0.068
+const STACK_Z_PER_DEPTH = -0.045
+const STACK_ROT_Y_PER_DEPTH = 0.115
+// Stack records start dim at depth 1 (=0.78) and fade further with depth.
+// Steve Jobs filter: the hero earns the eye, the stack is hint, not display.
+const STACK_OPACITY_AT_HERO = 1
+const STACK_OPACITY_DROP_FIRST = 0.22
+const STACK_OPACITY_FALLOFF = 0.10
 
-function lerp(a: number, b: number, t: number): number {
-  return a + (b - a) * t
+// When the hero is overtaken by a scroll, it slides left and rotates
+// off-camera. Tuned so the curve feels like handing a record to
+// someone standing to your left.
+const EXIT_X_AT_FULL = -1.4
+const EXIT_Z_AT_FULL = 0.18
+const EXIT_ROT_Y_AT_FULL = -0.85
+
+const SETTLE_DELAY_MS = 110
+const SETTLE_LERP = 0.18
+const WHEEL_SCALE = 0.0022
+
+interface Placement {
+  x: number
+  y: number
+  z: number
+  rotY: number
+  opacity: number
+}
+
+function placementForDepth(depth: number): Placement {
+  if (depth >= 0) {
+    const baseOpacity =
+      depth < 1
+        ? STACK_OPACITY_AT_HERO - (STACK_OPACITY_AT_HERO - (1 - STACK_OPACITY_DROP_FIRST)) * depth
+        : 1 - STACK_OPACITY_DROP_FIRST - STACK_OPACITY_FALLOFF * (depth - 1)
+    return {
+      x: STACK_X_PER_DEPTH * depth,
+      y: 0,
+      z: STACK_Z_PER_DEPTH * depth,
+      rotY: STACK_ROT_Y_PER_DEPTH * depth,
+      opacity: Math.max(0, baseOpacity),
+    }
+  }
+  // depth in [-1, 0): record leaving stage left
+  const t = -depth // 0 → just left hero, 1 → fully gone
+  return {
+    x: EXIT_X_AT_FULL * t,
+    y: 0,
+    z: EXIT_Z_AT_FULL * t,
+    rotY: EXIT_ROT_Y_AT_FULL * t,
+    opacity: Math.max(0, 1 - t * 1.05),
+  }
 }
 
 export function VinylShelf(): ReactElement | null {
@@ -30,176 +75,132 @@ export function VinylShelf(): ReactElement | null {
   const selectedVinylId = useSceneStore((s) => s.selectedVinylId)
   const sceneState = useSceneStore((s) => s.state)
   const { gl } = useThree()
+  const lastInteractionRef = useRef(0)
+  const breathRef = useRef<Group>(null)
 
   useEffect(() => {
     if (sceneState !== 'browsing') return
 
     const canvas = gl.domElement
+
     const handleWheel = (e: WheelEvent): void => {
       e.preventDefault()
-      const delta = e.deltaY * 0.003
-      const maxScroll = Math.max(0, tracks.length - 1)
-      setScrollPosition(Math.max(0, Math.min(maxScroll, scrollPosition + delta)))
+      const { scrollPosition: current, tracks: ts } = useSceneStore.getState()
+      const maxScroll = Math.max(0, ts.length - 1)
+      const next = Math.max(0, Math.min(maxScroll, current + e.deltaY * WHEEL_SCALE))
+      useSceneStore.getState().setScrollPosition(next)
+      lastInteractionRef.current = performance.now()
+    }
+
+    const handleKey = (e: KeyboardEvent): void => {
+      const { scrollPosition: current, tracks: ts } = useSceneStore.getState()
+      const maxScroll = Math.max(0, ts.length - 1)
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        e.preventDefault()
+        useSceneStore
+          .getState()
+          .setScrollPosition(Math.min(maxScroll, Math.round(current) + 1))
+        lastInteractionRef.current = 0 // settle immediately to the new integer
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        e.preventDefault()
+        useSceneStore
+          .getState()
+          .setScrollPosition(Math.max(0, Math.round(current) - 1))
+        lastInteractionRef.current = 0
+      }
     }
 
     canvas.addEventListener('wheel', handleWheel, { passive: false })
-    return () => canvas.removeEventListener('wheel', handleWheel)
-  }, [gl, scrollPosition, setScrollPosition, tracks.length, sceneState])
-
-  const handleVinylClick = (track: DeezerTrack): void => {
-    if (sceneState === 'browsing') {
-      selectVinyl(track.id)
+    window.addEventListener('keydown', handleKey)
+    return (): void => {
+      canvas.removeEventListener('wheel', handleWheel)
+      window.removeEventListener('keydown', handleKey)
     }
-  }
+  }, [gl, sceneState])
+
+  // Settle to nearest integer once the user stops scrolling, so a single
+  // record always becomes THE hero — no fractional limbo. Also breathe the
+  // whole crate so the scene never feels frozen.
+  useFrame(({ clock }) => {
+    if (breathRef.current) {
+      const t = clock.getElapsedTime()
+      breathRef.current.rotation.y = Math.sin(t * 0.32) * 0.014
+      breathRef.current.position.y = Math.sin(t * 0.42 + 1.3) * 0.006
+    }
+
+    if (sceneState !== 'browsing') return
+    if (performance.now() - lastInteractionRef.current < SETTLE_DELAY_MS) return
+    const target = Math.round(scrollPosition)
+    const diff = target - scrollPosition
+    if (Math.abs(diff) < 0.0005) {
+      if (scrollPosition !== target) setScrollPosition(target)
+      return
+    }
+    setScrollPosition(scrollPosition + diff * SETTLE_LERP)
+  })
 
   if (sceneState === 'playing') return null
 
-  const baseIdx = Math.floor(scrollPosition)
-  const startIdx = Math.max(0, baseIdx - 1)
-  const endIdx = Math.min(tracks.length, startIdx + VISIBLE_COUNT + 1)
-  const visibleTracks = tracks.slice(startIdx, endIdx)
-  const frac = scrollPosition - Math.floor(scrollPosition)
+  const heroIdx = Math.round(scrollPosition)
+  const heroTrack = tracks[heroIdx]
 
-  const centerIdx = Math.round(scrollPosition)
-  const featuredTrack = tracks[centerIdx]
+  // Render window: one record leaving + the hero + the stack.
+  const renderItems: { track: DeezerTrack; depth: number }[] = []
+  for (let i = -1; i <= STACK_DEPTH; i++) {
+    const trackIdx = heroIdx + i
+    const t = tracks[trackIdx]
+    if (!t) continue
+    const depth = trackIdx - scrollPosition
+    if (depth < -1.05 || depth > STACK_DEPTH + 0.5) continue
+    renderItems.push({ track: t, depth })
+  }
 
   return (
     <group>
-      <DiagonalShelf />
-      {featuredTrack && <FeaturedGlow track={featuredTrack} />}
+      {heroTrack && <HeroAtmosphere track={heroTrack} />}
 
+      <group ref={breathRef}>
       <Suspense fallback={null}>
-        {visibleTracks.map((track, i) => {
-          // Hide the vinyl that's currently flying to the turntable
+        {renderItems.map(({ track, depth }) => {
           if (sceneState === 'animating' && track.id === selectedVinylId) return null
-
-          const globalIdx = startIdx + i
-          const depth = globalIdx - baseIdx - frac
-          if (depth < -1 || depth > VISIBLE_COUNT) return null
-
-          const t = Math.max(0, Math.min(1, depth / (VISIBLE_COUNT - 1)))
-
-          const x = lerp(NEAR_POINT.x, FAR_POINT.x, t)
-          const y = lerp(NEAR_POINT.y, FAR_POINT.y, t)
-          const z = lerp(NEAR_POINT.z, FAR_POINT.z, t)
-          const scale = lerp(SCALE_NEAR, SCALE_FAR, t)
-
-          const opacity = depth < 0 ? Math.max(0, 1 + depth) : 1
-          const finalScale = opacity > 0.05 ? scale * opacity : 0
+          const p = placementForDepth(depth)
+          if (p.opacity < 0.02) return null
 
           return (
             <VinylRecord
               key={track.id}
               track={track}
-              position={[x, y, z]}
-              rotation={[VINYL_TILT_X, 0, 0]}
-              scale={finalScale}
-              onClick={() => handleVinylClick(track)}
+              position={[p.x, p.y, p.z]}
+              rotation={[0, p.rotY, 0]}
+              opacity={p.opacity}
+              onClick={() => sceneState === 'browsing' && selectVinyl(track.id)}
             />
           )
         })}
       </Suspense>
+      </group>
     </group>
   )
 }
 
-// Colored point-light that follows the featured (front-most) vinyl,
-// tinting the scene with the dominant color of its cover art.
-function FeaturedGlow({ track }: { track: DeezerTrack }): ReactElement | null {
+// Atmosphere tinted by the hero's dominant color. No furniture, no crate —
+// just light shaping space around the record.
+function HeroAtmosphere({ track }: { track: DeezerTrack }): ReactElement | null {
   const color = useDominantColor(track.album.cover_medium)
-  if (!color) return null
-  const hex = rgbToHex(color)
+  const hex = color ? rgbToHex(color) : '#ffb066'
   return (
     <>
-      {/* Big colored halo behind the featured vinyl — primary atmospheric glow */}
-      <pointLight
-        position={[NEAR_POINT.x + 0.15, NEAR_POINT.y + 0.25, NEAR_POINT.z - 0.5]}
-        intensity={12}
-        color={hex}
-        distance={3.5}
-        decay={1.6}
-      />
-      {/* Closer pop to lift the featured cover */}
-      <pointLight
-        position={[NEAR_POINT.x - 0.1, NEAR_POINT.y + 0.1, NEAR_POINT.z + 0.15]}
-        intensity={3.5}
-        color={hex}
-        distance={1.6}
-        decay={2}
-      />
-      {/* Rim light from below — warm edge underneath */}
-      <pointLight
-        position={[NEAR_POINT.x - 0.05, NEAR_POINT.y - 0.3, NEAR_POINT.z - 0.05]}
-        intensity={2.2}
-        color={hex}
-        distance={1.3}
-        decay={2}
-      />
+      {/* Warm key from front-left — sculpts the cover face, works on any color */}
+      <pointLight position={[-0.22, 0.28, 0.6]} intensity={6.5} color="#fff0d8" distance={2.0} decay={2} />
+      {/* Tight warm fill from the right — adds a second highlight, prevents flatness */}
+      <pointLight position={[0.35, -0.05, 0.55]} intensity={2.4} color="#ffd9a8" distance={1.5} decay={2} />
+
+      {/* Big colored halo behind the hero — atmospheric bloom */}
+      <pointLight position={[0, 0.0, -0.7]} intensity={28} color={hex} distance={3.6} decay={1.4} />
+      {/* Close pop in front, tinted by cover */}
+      <pointLight position={[-0.05, 0.05, 0.45]} intensity={4.5} color={hex} distance={1.6} decay={2} />
+      {/* Warm rim from below — grounds the record without drawing a floor */}
+      <pointLight position={[0, -0.32, 0.25]} intensity={4.2} color={hex} distance={1.6} decay={2} />
     </>
-  )
-}
-
-// Wooden crate aligned with the NEAR→FAR diagonal.
-// The whole structure is rotated via a quaternion so local +Z runs along
-// the diagonal. Once rotated, LOCAL axes map to world as follows (given
-// our specific direction):
-//   local +X world ≈ (-0.62, -0.48, -0.62) → deeper into scene (away from camera)
-//   local +Y world ≈ (-0.48,  0.85, -0.19) → mostly up (with a lean back)
-//   local +Z world ≈ ( 0.62,  0.19, -0.76) → along the diagonal
-// So: back wall goes at local +X (behind vinyls), floor below at local -Y,
-// front rim at local -X (foreground side).
-function DiagonalShelf(): ReactElement {
-  const { position, quaternion, length } = useMemo(() => {
-    const dir = new Vector3().subVectors(FAR_POINT, NEAR_POINT)
-    const len = dir.length()
-    const mid = new Vector3().addVectors(NEAR_POINT, FAR_POINT).multiplyScalar(0.5)
-    const q = new Quaternion().setFromUnitVectors(
-      new Vector3(0, 0, 1),
-      dir.clone().normalize(),
-    )
-    return { position: mid, quaternion: q, length: len }
-  }, [])
-
-  const qt: [number, number, number, number] = [
-    quaternion.x,
-    quaternion.y,
-    quaternion.z,
-    quaternion.w,
-  ]
-
-  const extra = 0.15 // minimal overhang past NEAR/FAR
-  const totalLen = length + extra
-
-  return (
-    <group position={position} quaternion={qt}>
-      {/* Floor plank — same width as a sleeve, just enough to "hold" the vinyls */}
-      <mesh position={[0, -0.19, 0]}>
-        <boxGeometry args={[0.33, 0.018, totalLen]} />
-        <meshStandardMaterial color="#5c3a1e" roughness={0.85} metalness={0.05} />
-      </mesh>
-
-      {/* Back panel — taller, behind vinyls from camera's view */}
-      <mesh position={[0.16, 0.0, 0]}>
-        <boxGeometry args={[0.012, 0.38, totalLen]} />
-        <meshStandardMaterial color="#3d2510" roughness={0.9} metalness={0.02} />
-      </mesh>
-
-      {/* Low front rim — kept short so it doesn't occlude the vinyl covers */}
-      <mesh position={[-0.16, -0.17, 0]}>
-        <boxGeometry args={[0.012, 0.04, totalLen]} />
-        <meshStandardMaterial color="#6b4423" roughness={0.85} metalness={0.05} />
-      </mesh>
-
-      {/* Warm LED strip tucked behind the back panel */}
-      <mesh position={[0.155, -0.17, 0]}>
-        <boxGeometry args={[0.006, 0.006, totalLen * 0.96]} />
-        <meshStandardMaterial
-          color="#ffb066"
-          emissive="#ffb066"
-          emissiveIntensity={2.2}
-          roughness={0.5}
-        />
-      </mesh>
-    </group>
   )
 }
