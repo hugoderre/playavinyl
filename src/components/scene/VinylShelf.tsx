@@ -77,6 +77,7 @@ export function VinylShelf(): ReactElement | null {
   const { gl } = useThree()
   const lastInteractionRef = useRef(0)
   const breathRef = useRef<Group>(null)
+  const mouseRef = useRef({ x: 0, y: 0 })
 
   useEffect(() => {
     if (sceneState !== 'browsing') return
@@ -118,14 +119,30 @@ export function VinylShelf(): ReactElement | null {
     }
   }, [gl, sceneState])
 
+  // Mouse parallax — the crate gently leans toward the cursor.
+  useEffect(() => {
+    const handler = (e: MouseEvent): void => {
+      mouseRef.current.x = (e.clientX / window.innerWidth - 0.5) * 2
+      mouseRef.current.y = (e.clientY / window.innerHeight - 0.5) * 2
+    }
+    window.addEventListener('mousemove', handler)
+    return (): void => window.removeEventListener('mousemove', handler)
+  }, [])
+
   // Settle to nearest integer once the user stops scrolling, so a single
   // record always becomes THE hero — no fractional limbo. Also breathe the
   // whole crate so the scene never feels frozen.
   useFrame(({ clock }) => {
     if (breathRef.current) {
       const t = clock.getElapsedTime()
-      breathRef.current.rotation.y = Math.sin(t * 0.32) * 0.014
-      breathRef.current.position.y = Math.sin(t * 0.42 + 1.3) * 0.006
+      const breathRotY = Math.sin(t * 0.32) * 0.014
+      const breathPosY = Math.sin(t * 0.42 + 1.3) * 0.006
+      // Mouse parallax — eased toward target so it never snaps.
+      const targetRotY = mouseRef.current.x * 0.045
+      const targetRotX = -mouseRef.current.y * 0.035
+      breathRef.current.rotation.y += (breathRotY + targetRotY - breathRef.current.rotation.y) * 0.08
+      breathRef.current.rotation.x += (targetRotX - breathRef.current.rotation.x) * 0.08
+      breathRef.current.position.y = breathPosY
     }
 
     if (sceneState !== 'browsing') return
