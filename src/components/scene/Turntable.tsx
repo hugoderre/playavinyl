@@ -24,10 +24,15 @@ function VinylOnPlatter({ track }: VinylOnPlatterProps): ReactElement {
   // Same cover_big URL as the rest of the flow → browser cache hit, instant.
   const coverTexture = useLoader(TextureLoader, track.album.cover_big)
   const isPlaying = usePlayerStore((s) => s.isPlaying)
+  // Spin velocity lerps toward target so the disc spools up and coasts to a
+  // stop with inertia, like a real platter — never an abrupt cut.
+  const spinVelocityRef = useRef(0)
 
   useFrame((_, delta) => {
-    if (discRef.current && isPlaying) {
-      discRef.current.rotation.y += RADIANS_PER_SECOND * delta
+    const target = isPlaying ? RADIANS_PER_SECOND : 0
+    spinVelocityRef.current += (target - spinVelocityRef.current) * 0.035
+    if (discRef.current && Math.abs(spinVelocityRef.current) > 0.001) {
+      discRef.current.rotation.y += spinVelocityRef.current * delta
     }
   })
 
@@ -111,10 +116,13 @@ export function Turntable(): ReactElement {
   const isPlaying = usePlayerStore((s) => s.isPlaying)
   const currentTrack = usePlayerStore((s) => s.currentTrack)
   const sceneState = useSceneStore((s) => s.state)
+  const platterVelocityRef = useRef(0)
 
   useFrame((_, delta) => {
-    if (platterRef.current && isPlaying) {
-      platterRef.current.rotation.y += RADIANS_PER_SECOND * delta
+    const target = isPlaying ? RADIANS_PER_SECOND : 0
+    platterVelocityRef.current += (target - platterVelocityRef.current) * 0.035
+    if (platterRef.current && Math.abs(platterVelocityRef.current) > 0.001) {
+      platterRef.current.rotation.y += platterVelocityRef.current * delta
     }
 
     if (tonearmRef.current) {
