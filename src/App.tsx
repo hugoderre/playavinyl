@@ -14,6 +14,7 @@ import { TrackInfoPanel } from './components/ui/TrackInfoPanel'
 import { VinylHoverInfo } from './components/ui/VinylHoverInfo'
 import { BrowsingOverlay } from './components/ui/BrowsingOverlay'
 import { BackToShelf } from './components/ui/BackToShelf'
+import { BrowseStateMessage } from './components/ui/BrowseStateMessage'
 import { useVinylAnimation } from './hooks/useVinylAnimation'
 
 const ANIMATION_DURATION_MS = 4000
@@ -24,6 +25,9 @@ export default function App(): ReactElement {
   const selectedVinylId = useSceneStore((s) => s.selectedVinylId)
   const tracks = useSceneStore((s) => s.tracks)
   const animStart = useSceneStore((s) => s.animationStartedAt)
+  // The 3D canvas fades in once tracks arrive — avoids the harsh "pop" when
+  // covers suddenly materialize after the Deezer fetch resolves.
+  const canvasReady = tracks.length > 0
 
   const handleChartTracks = useCallback((tracks: Parameters<typeof setTracks>[0]) => {
     setTracks(tracks)
@@ -38,7 +42,14 @@ export default function App(): ReactElement {
     <div className="fixed inset-0 overflow-hidden">
       <Canvas
         camera={{ position: [0, 0.3, 1.5], fov: 50 }}
-        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          width: '100%',
+          height: '100%',
+          opacity: canvasReady ? 1 : 0,
+          transition: 'opacity 720ms cubic-bezier(0.22, 1, 0.36, 1)',
+        }}
         gl={{ antialias: true, alpha: false }}
         onCreated={({ gl }) => {
           gl.setClearColor('#070605')
@@ -93,6 +104,7 @@ export default function App(): ReactElement {
 
       <SearchBar />
       <BrowsingOverlay />
+      <BrowseStateMessage />
       <BackToShelf />
       <TrackInfoPanel />
       <VinylHoverInfo />

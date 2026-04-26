@@ -29,32 +29,19 @@ export function BrowsingOverlay(): ReactElement | null {
         {centerIdx + 1} / {tracks.length}
       </div>
 
-      {/* Scroll hint — bottom-right, fades once user scrolls */}
+      {/* Scroll affordance — bottom-right. A vertical line with a pellet
+          drifting down on loop reads more like motion than the old
+          chevrons. Fades once the user takes the cue. */}
       <div
-        className="absolute bottom-6 right-8 z-40 flex items-center gap-2 pointer-events-none transition-opacity duration-500"
-        style={{ opacity: scrollPosition < 0.5 ? 0.5 : 0 }}
+        className="absolute bottom-8 right-10 z-40 flex flex-col items-center gap-2 pointer-events-none transition-opacity duration-700"
+        style={{ opacity: scrollPosition < 0.5 ? 0.6 : 0 }}
       >
-        <span className="text-[var(--color-text-muted)] text-[10px] uppercase tracking-widest">
+        <span className="text-white/55 text-[10px] uppercase tracking-[0.32em]">
           scroll
         </span>
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="animate-pulse">
-          <path
-            d="M4 6L8 2L12 6"
-            stroke="currentColor"
-            strokeWidth="1.2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="text-[var(--color-text-muted)]"
-          />
-          <path
-            d="M4 10L8 14L12 10"
-            stroke="currentColor"
-            strokeWidth="1.2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="text-[var(--color-text-muted)]"
-          />
-        </svg>
+        <div className="relative h-7 w-px bg-white/15 overflow-hidden rounded-full">
+          <span className="scroll-pellet absolute left-1/2 -translate-x-1/2 size-1 -ml-[1.5px] rounded-full bg-white/85" />
+        </div>
       </div>
     </>
   )
