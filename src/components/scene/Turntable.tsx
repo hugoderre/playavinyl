@@ -83,13 +83,22 @@ function TurntableAtmosphere({ track }: { track: DeezerTrack }): ReactElement | 
   const color = useDominantColor(track.album.cover_big)
   const haloRef = useRef<PointLight>(null)
   const isPlaying = usePlayerStore((s) => s.isPlaying)
+  // Brief energy flash when audio starts — simulates the needle hitting the groove.
+  const dropFlashRef = useRef(0)
+  const wasPlayingRef = useRef(false)
 
   useFrame(({ clock }) => {
+    if (isPlaying && !wasPlayingRef.current) {
+      dropFlashRef.current = 1
+    }
+    wasPlayingRef.current = isPlaying
+    dropFlashRef.current = Math.max(0, dropFlashRef.current - 0.045)
+
     if (haloRef.current) {
       const t = clock.getElapsedTime()
-      // Pulse only while playing — gives the room a heartbeat in lockstep with the music idea
       const pulse = isPlaying ? 1 + Math.sin(t * 1.2) * 0.08 : 0.6
-      haloRef.current.intensity = 14 * pulse
+      const flashBoost = 1 + dropFlashRef.current * 0.55
+      haloRef.current.intensity = 14 * pulse * flashBoost
     }
   })
 
