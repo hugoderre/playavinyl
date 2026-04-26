@@ -30,6 +30,7 @@ export function BackToShelf(): ReactElement | null {
         text-white/85 hover:text-white
         shadow-[0_10px_30px_-10px_rgba(0,0,0,0.6)]
         transition-all
+        animate-fade-in-soft
       "
       aria-label="Retour au bac à vinyles"
     >

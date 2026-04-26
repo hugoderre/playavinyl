@@ -38,7 +38,8 @@ export function VinylRecord({
   onPointerEnter,
   onPointerLeave,
 }: VinylRecordProps): ReactElement {
-  const coverTexture = useLoader(TextureLoader, track.album.cover_medium)
+  // cover_big (500×500) keeps the hero crisp at 30%+ of viewport on retina.
+  const coverTexture = useLoader(TextureLoader, track.album.cover_big)
 
   const handlePointerEnter = (e: ThreeEvent<PointerEvent>): void => {
     onPointerEnter?.()

@@ -234,7 +234,8 @@ export function VinylShelf(): ReactElement | null {
 const HALO_BASE_INTENSITY = 28
 
 function HeroAtmosphere({ track }: { track: DeezerTrack }): ReactElement | null {
-  const color = useDominantColor(track.album.cover_medium)
+  // Use cover_big to share the cache with the visible record texture — same URL → one fetch.
+  const color = useDominantColor(track.album.cover_big)
   const hex = color ? rgbToHex(color) : '#ffb066'
   const haloRef = useRef<PointLight>(null)
 

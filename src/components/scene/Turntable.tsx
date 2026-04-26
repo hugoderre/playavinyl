@@ -21,7 +21,8 @@ interface VinylOnPlatterProps {
 
 function VinylOnPlatter({ track }: VinylOnPlatterProps): ReactElement {
   const discRef = useRef<Group>(null)
-  const coverTexture = useLoader(TextureLoader, track.album.cover_medium)
+  // Same cover_big URL as the rest of the flow → browser cache hit, instant.
+  const coverTexture = useLoader(TextureLoader, track.album.cover_big)
   const isPlaying = usePlayerStore((s) => s.isPlaying)
 
   useFrame((_, delta) => {
@@ -74,7 +75,7 @@ function VinylOnPlatter({ track }: VinylOnPlatterProps): ReactElement {
 // language as the hero's atmosphere at the shelf, so the turntable feels
 // like the same room.
 function TurntableAtmosphere({ track }: { track: DeezerTrack }): ReactElement | null {
-  const color = useDominantColor(track.album.cover_medium)
+  const color = useDominantColor(track.album.cover_big)
   const haloRef = useRef<PointLight>(null)
   const isPlaying = usePlayerStore((s) => s.isPlaying)
 

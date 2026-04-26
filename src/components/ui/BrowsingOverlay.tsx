@@ -15,7 +15,7 @@ export function BrowsingOverlay(): ReactElement | null {
   return (
     <>
       {/* Title + artist — bottom-left */}
-      <div className="absolute bottom-6 left-8 z-40 max-w-md pointer-events-none">
+      <div className="absolute bottom-6 left-8 z-40 max-w-md pointer-events-none animate-fade-in-soft">
         <h1 className="text-[var(--color-text)] text-2xl font-bold leading-tight tracking-tight">
           {current.title_short}
         </h1>
@@ -25,7 +25,7 @@ export function BrowsingOverlay(): ReactElement | null {
       </div>
 
       {/* Counter — top-right */}
-      <div className="absolute top-5 right-6 z-40 text-[var(--color-text-muted)] text-xs font-medium tracking-widest opacity-50 pointer-events-none">
+      <div className="absolute top-5 right-6 z-40 text-[var(--color-text-muted)] text-xs font-medium tracking-widest opacity-50 pointer-events-none animate-fade-in-soft">
         {centerIdx + 1} / {tracks.length}
       </div>
 

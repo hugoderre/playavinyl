@@ -55,7 +55,8 @@ export function FlyingVinyl({
   const discRef = useRef<Group>(null)
   const completedRef = useRef(false)
 
-  const coverTexture = useLoader(TextureLoader, track.album.cover_medium)
+  // Match VinylRecord — cover_big stays sharp through the whole flight.
+  const coverTexture = useLoader(TextureLoader, track.album.cover_big)
 
   useFrame(() => {
     const elapsed = Date.now() - startTime

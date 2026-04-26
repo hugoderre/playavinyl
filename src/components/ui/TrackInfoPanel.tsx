@@ -50,7 +50,7 @@ export function TrackInfoPanel(): ReactElement | null {
     : currentTrack.album.title
 
   return (
-    <div className="absolute right-6 top-1/2 -translate-y-1/2 z-40 w-[clamp(300px,28vw,380px)] max-h-[80vh]">
+    <div className="absolute right-6 top-1/2 -translate-y-1/2 z-40 w-[clamp(300px,28vw,380px)] max-h-[80vh] animate-fade-in-soft">
       <div className="relative rounded-3xl bg-black/55 backdrop-blur-2xl border border-white/[0.08] shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8)] flex flex-col max-h-[80vh]">
         <div className="px-7 pt-7 pb-7 overflow-y-auto">
           {/* Status pill — pulses with audio flow */}
@@ -136,33 +136,42 @@ export function TrackInfoPanel(): ReactElement | null {
                 </svg>
               </button>
 
-              {albumOpen && (
-                <div className="mt-3 space-y-px max-h-56 overflow-y-auto -mr-2 pr-2">
-                  {albumTracks.map((track, idx) => {
-                    const isCurrent = track.id === currentTrack.id
-                    return (
-                      <button
-                        key={track.id}
-                        onClick={() => handleTrackClick(track)}
-                        className={`flex items-center gap-3 w-full text-left px-2.5 py-2 rounded-md text-[13px] cursor-pointer transition-colors ${
-                          isCurrent
-                            ? 'bg-white/[0.06] text-white'
-                            : 'text-white/55 hover:bg-white/[0.04] hover:text-white/90'
-                        }`}
-                      >
-                        <span
-                          className={`text-[10px] tabular-nums w-4 text-right shrink-0 ${
-                            isCurrent ? 'text-[var(--color-accent)]' : 'text-white/30'
+              {/* Smooth height animation via the grid 0fr ↔ 1fr trick — no JS, no measuring */}
+              <div
+                className={`grid transition-[grid-template-rows] duration-[280ms] ease-out ${
+                  albumOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                }`}
+                aria-hidden={!albumOpen}
+              >
+                <div className="overflow-hidden">
+                  <div className="mt-3 space-y-px max-h-56 overflow-y-auto -mr-2 pr-2">
+                    {albumTracks.map((track, idx) => {
+                      const isCurrent = track.id === currentTrack.id
+                      return (
+                        <button
+                          key={track.id}
+                          onClick={() => handleTrackClick(track)}
+                          tabIndex={albumOpen ? 0 : -1}
+                          className={`flex items-center gap-3 w-full text-left px-2.5 py-2 rounded-md text-[13px] cursor-pointer transition-colors ${
+                            isCurrent
+                              ? 'bg-white/[0.06] text-white'
+                              : 'text-white/55 hover:bg-white/[0.04] hover:text-white/90'
                           }`}
                         >
-                          {idx + 1}
-                        </span>
-                        <span className="flex-1 truncate">{track.title_short}</span>
-                      </button>
-                    )
-                  })}
+                          <span
+                            className={`text-[10px] tabular-nums w-4 text-right shrink-0 ${
+                              isCurrent ? 'text-[var(--color-accent)]' : 'text-white/30'
+                            }`}
+                          >
+                            {idx + 1}
+                          </span>
+                          <span className="flex-1 truncate">{track.title_short}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
-              )}
+              </div>
             </div>
           )}
 
