@@ -68,9 +68,11 @@ export function FlyingVinyl({
     if (discRef.current) {
       const emerge = smoothstep(DISC_EMERGE_START, DISC_EMERGE_END, rawProgress)
       discRef.current.position.x = emerge * 0.45
-      // Tilt the disc flat once it's fully out and continue to spin as it flies
-      const flatness = smoothstep(DISC_EMERGE_END, 0.8, rawProgress)
-      discRef.current.rotation.x = -Math.PI / 2 * flatness
+      // Disc starts UPRIGHT alongside the sleeve, then tilts flat for its
+      // landing on the platter. Cylinder geometry defaults to flat (axis Y),
+      // so the upright pose is rotation.x = -PI/2.
+      const flatness = smoothstep(DISC_EMERGE_END, 0.85, rawProgress)
+      discRef.current.rotation.x = -Math.PI / 2 * (1 - flatness)
       discRef.current.rotation.y = rawProgress * Math.PI * 6
     }
 
@@ -111,15 +113,15 @@ export function FlyingVinyl({
           metalness={0.0}
         />
       </mesh>
-      {/* Disc — emerges horizontally, then flattens for its landing pose */}
+      {/* Disc — starts upright alongside the sleeve, flattens for its landing pose */}
       <group ref={discRef}>
         <mesh>
           <cylinderGeometry args={[DISC_RADIUS, DISC_RADIUS, DISC_THICKNESS, 64]} />
           <meshStandardMaterial color="#0a0a0a" roughness={0.3} metalness={0.8} />
         </mesh>
-        {/* Colored center label — glows subtly so the disc has a beating heart */}
+        {/* Top label */}
         <mesh position={[0, DISC_THICKNESS / 2 + 0.0005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <circleGeometry args={[0.045, 32]} />
+          <circleGeometry args={[0.05, 48]} />
           <meshStandardMaterial
             map={coverTexture}
             emissiveMap={coverTexture}
@@ -127,6 +129,21 @@ export function FlyingVinyl({
             emissiveIntensity={0.4}
             roughness={0.55}
             metalness={0.1}
+            side={DoubleSide}
+          />
+        </mesh>
+        {/* Bottom label — real vinyls are double-sided. Keeps the cover visible
+            no matter which face of the disc is currently toward the camera. */}
+        <mesh position={[0, -DISC_THICKNESS / 2 - 0.0005, 0]} rotation={[Math.PI / 2, 0, 0]}>
+          <circleGeometry args={[0.05, 48]} />
+          <meshStandardMaterial
+            map={coverTexture}
+            emissiveMap={coverTexture}
+            emissive="#ffffff"
+            emissiveIntensity={0.4}
+            roughness={0.55}
+            metalness={0.1}
+            side={DoubleSide}
           />
         </mesh>
       </group>
