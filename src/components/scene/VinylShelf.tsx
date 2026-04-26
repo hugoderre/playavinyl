@@ -7,7 +7,7 @@ import { useSceneStore } from '../../stores/sceneStore'
 import { useDominantColor, rgbToHex } from '../../hooks/useDominantColor'
 import type { DeezerTrack } from '../../types'
 
-const VISIBLE_COUNT = 18
+const VISIBLE_COUNT = 24
 
 // Diagonal trajectory in world space — matches MOCK-VINYL-FLOW.html
 // Near vinyl sits foreground-left-low, far one recedes back-up-right.
@@ -17,10 +17,6 @@ const FAR_POINT = new Vector3(2.2, 0.9, -2.8)
 const SCALE_NEAR = 1.0
 const SCALE_FAR = 0.14
 const VINYL_TILT_X = -0.04 // nearly face-on (subtle lean)
-
-function easeOut(t: number): number {
-  return 1 - Math.pow(1 - t, 3)
-}
 
 function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * t
@@ -82,12 +78,11 @@ export function VinylShelf(): ReactElement | null {
           if (depth < -1 || depth > VISIBLE_COUNT) return null
 
           const t = Math.max(0, Math.min(1, depth / (VISIBLE_COUNT - 1)))
-          const e = easeOut(t)
 
-          const x = lerp(NEAR_POINT.x, FAR_POINT.x, e)
-          const y = lerp(NEAR_POINT.y, FAR_POINT.y, e)
-          const z = lerp(NEAR_POINT.z, FAR_POINT.z, e)
-          const scale = lerp(SCALE_NEAR, SCALE_FAR, e)
+          const x = lerp(NEAR_POINT.x, FAR_POINT.x, t)
+          const y = lerp(NEAR_POINT.y, FAR_POINT.y, t)
+          const z = lerp(NEAR_POINT.z, FAR_POINT.z, t)
+          const scale = lerp(SCALE_NEAR, SCALE_FAR, t)
 
           const opacity = depth < 0 ? Math.max(0, 1 + depth) : 1
           const finalScale = opacity > 0.05 ? scale * opacity : 0
@@ -189,9 +184,9 @@ function DiagonalShelf(): ReactElement {
         <meshStandardMaterial color="#3d2510" roughness={0.9} metalness={0.02} />
       </mesh>
 
-      {/* Low front rim */}
-      <mesh position={[-0.16, -0.13, 0]}>
-        <boxGeometry args={[0.012, 0.12, totalLen]} />
+      {/* Low front rim — kept short so it doesn't occlude the vinyl covers */}
+      <mesh position={[-0.16, -0.17, 0]}>
+        <boxGeometry args={[0.012, 0.04, totalLen]} />
         <meshStandardMaterial color="#6b4423" roughness={0.85} metalness={0.05} />
       </mesh>
 
