@@ -16,6 +16,7 @@ import { BrowsingOverlay } from './components/ui/BrowsingOverlay'
 import { BackToShelf } from './components/ui/BackToShelf'
 import { BrowseStateMessage } from './components/ui/BrowseStateMessage'
 import { useVinylAnimation } from './hooks/useVinylAnimation'
+import { useDocumentTitle } from './hooks/useDocumentTitle'
 
 const ANIMATION_DURATION_MS = 4000
 
@@ -35,6 +36,7 @@ export default function App(): ReactElement {
 
   useChartTracks(handleChartTracks)
   useVinylAnimation(ANIMATION_DURATION_MS)
+  useDocumentTitle()
 
   const flyingTrack = tracks.find((t) => t.id === selectedVinylId) ?? null
 

@@ -51,6 +51,19 @@ export function SearchBar(): ReactElement | null {
     return (): void => input.removeEventListener('keydown', onKey)
   }, [query, handleClear])
 
+  // Cmd/Ctrl+K — universal "open search" gesture. Focus the input.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        inputRef.current?.focus()
+        inputRef.current?.select()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return (): void => window.removeEventListener('keydown', onKey)
+  }, [])
+
   // Search is a browsing affordance — at the turntable the user is listening,
   // not searching, so we hide it to keep the playing scene serene.
   if (sceneState !== 'browsing') return null
