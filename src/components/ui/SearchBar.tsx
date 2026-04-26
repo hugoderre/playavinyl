@@ -3,6 +3,7 @@ import { useCallback } from 'react'
 import { useSearchStore } from '../../stores/searchStore'
 import { useSceneStore } from '../../stores/sceneStore'
 import { useDeezerSearch } from '../../hooks/useDeezer'
+import { getChartTracks } from '../../api/deezer'
 
 export function SearchBar(): ReactElement {
   const query = useSearchStore((s) => s.query)
@@ -22,7 +23,10 @@ export function SearchBar(): ReactElement {
 
   const handleClear = (): void => {
     clearSearch()
-    // Trending will reload via useChartTracks in App
+    // Restore the charts: useChartTracks only fires once at mount, so we
+    // re-fetch directly here. fetchCached will hit the in-memory cache so
+    // there's no extra network round-trip.
+    getChartTracks().then((charts) => setTracks(charts))
   }
 
   return (

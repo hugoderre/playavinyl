@@ -26,7 +26,10 @@ export const useSceneStore = create<SceneStoreState>((set) => ({
   albumTracks: [],
 
   setState: (state) => set({ state }),
-  setScrollPosition: (scrollPosition) => set({ scrollPosition }),
+  setScrollPosition: (scrollPosition) =>
+    set((s) => ({
+      scrollPosition: Math.max(0, Math.min(Math.max(0, s.tracks.length - 1), scrollPosition)),
+    })),
   selectVinyl: (trackId) =>
     set({ selectedVinylId: trackId, state: 'animating', animationStartedAt: Date.now() }),
   clearSelection: () =>
@@ -36,6 +39,8 @@ export const useSceneStore = create<SceneStoreState>((set) => ({
       albumTracks: [],
       animationStartedAt: 0,
     }),
-  setTracks: (tracks) => set({ tracks }),
+  // Reset scroll to the first record whenever the deck changes (charts ↔
+  // search ↔ different searches), so the user always lands on the new collection's hero.
+  setTracks: (tracks) => set({ tracks, scrollPosition: 0 }),
   setAlbumTracks: (albumTracks) => set({ albumTracks }),
 }))
