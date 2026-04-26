@@ -1,27 +1,27 @@
 import type { ReactElement } from 'react'
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { usePlayerStore } from '../../stores/playerStore'
 import { useSceneStore } from '../../stores/sceneStore'
 import { getAlbumTracks } from '../../hooks/useDeezer'
-import { formatDuration, formatProgress } from '../../utils/formatters'
+import { useAudio } from '../../hooks/useAudio'
+import { formatProgress } from '../../utils/formatters'
 import type { DeezerTrack } from '../../types'
 
-interface TrackInfoPanelProps {
-  stopPlayback: () => void
-}
+const PREVIEW_DURATION = 30
 
-export function TrackInfoPanel({ stopPlayback }: TrackInfoPanelProps): ReactElement | null {
+export function TrackInfoPanel(): ReactElement | null {
   const sceneState = useSceneStore((s) => s.state)
   const currentTrack = usePlayerStore((s) => s.currentTrack)
   const isPlaying = usePlayerStore((s) => s.isPlaying)
   const progress = usePlayerStore((s) => s.progress)
+  const autoplayBlocked = usePlayerStore((s) => s.autoplayBlocked)
   const albumTracks = useSceneStore((s) => s.albumTracks)
   const setAlbumTracks = useSceneStore((s) => s.setAlbumTracks)
   const selectVinyl = useSceneStore((s) => s.selectVinyl)
   const clearSelection = useSceneStore((s) => s.clearSelection)
+  const { resumePlayback, stopPlayback } = useAudio()
+  const [albumOpen, setAlbumOpen] = useState(false)
 
-  // Load album tracks when a track is playing
-  // Intentionally omit `currentTrack` from deps — we only re-fetch when the album ID changes
   useEffect(
     () => {
       if (!currentTrack) return
@@ -31,107 +31,181 @@ export function TrackInfoPanel({ stopPlayback }: TrackInfoPanelProps): ReactElem
     [currentTrack?.album.id, setAlbumTracks],
   )
 
-  const handleTrackClick = useCallback((track: DeezerTrack) => {
-    selectVinyl(track.id)
-  }, [selectVinyl])
+  // Reset album drawer state when the track changes
+  useEffect(() => {
+    setAlbumOpen(false)
+  }, [currentTrack?.id])
+
+  const handleTrackClick = useCallback(
+    (track: DeezerTrack) => {
+      selectVinyl(track.id)
+    },
+    [selectVinyl],
+  )
+
+  const handleBack = useCallback(() => {
+    clearSelection()
+    stopPlayback()
+  }, [clearSelection, stopPlayback])
 
   if (sceneState !== 'playing' || !currentTrack) return null
 
+  const progressPct = Math.min(100, (progress / PREVIEW_DURATION) * 100)
+  const releaseYear = currentTrack.album.release_date?.slice(0, 4)
+
   return (
-    <div className="absolute right-6 top-1/2 -translate-y-1/2 z-50 w-80">
-      <div className="bg-black/60 backdrop-blur-lg rounded-2xl border border-[var(--color-border)] p-6">
-        {/* Cover art */}
-        <img
-          src={currentTrack.album.cover_big}
-          alt={currentTrack.album.title}
-          className="w-full aspect-square rounded-lg mb-4 object-cover"
-          crossOrigin="anonymous"
-        />
-
-        {/* Track info */}
-        <h2 className="text-[var(--color-text)] text-lg font-semibold leading-tight">
-          {currentTrack.title_short}
-        </h2>
-        <p className="text-[var(--color-text-muted)] text-sm mt-1">
-          {currentTrack.artist.name}
-        </p>
-        <p className="text-[var(--color-text-muted)] text-xs mt-0.5 opacity-60">
-          {currentTrack.album.title}
-          {currentTrack.album.release_date && ` · ${currentTrack.album.release_date.slice(0, 4)}`}
-        </p>
-
-        {/* Duration */}
-        <p className="text-[var(--color-text-muted)] text-xs mt-2">
-          {formatDuration(currentTrack.duration)}
-        </p>
-
-        {/* Progress bar */}
-        <div className="mt-3">
-          <div className="h-1 bg-white/10 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-[var(--color-accent)] rounded-full transition-all duration-200"
-              style={{ width: `${(progress / 30) * 100}%` }}
-            />
-          </div>
-          <div className="flex justify-between mt-1">
-            <span className="text-[var(--color-text-muted)] text-[10px]">
-              {formatProgress(progress)}
-            </span>
-            <span className="text-[var(--color-text-muted)] text-[10px]">
-              0:30
-            </span>
-          </div>
-        </div>
-
-        {/* Status */}
-        <p className="text-[var(--color-accent)] text-xs mt-2">
-          {isPlaying ? '● Playing' : '○ Stopped'}
-        </p>
-
-        {/* Deezer link */}
-        <a
-          href={currentTrack.link}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-block mt-3 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] underline underline-offset-2 transition-colors"
-        >
-          Écouter sur Deezer ↗
-        </a>
-
-        {/* Back to shelf */}
+    <div className="absolute right-8 top-1/2 -translate-y-1/2 z-50 w-[340px] max-h-[80vh]">
+      <div className="relative rounded-3xl bg-black/45 backdrop-blur-2xl border border-white/[0.08] shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col max-h-[80vh]">
+        {/* Top — back button */}
         <button
-          onClick={() => {
-            clearSelection()
-            stopPlayback()
-          }}
-          className="mt-4 w-full py-2 rounded-lg bg-white/5 text-[var(--color-text-muted)] text-xs hover:bg-white/10 hover:text-[var(--color-text)] transition-colors cursor-pointer"
+          onClick={handleBack}
+          className="absolute top-4 left-4 z-10 text-white/40 hover:text-white/90 transition-colors p-1.5 cursor-pointer"
+          aria-label="Retour au bac"
         >
-          ← Retour au bac
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path
+              d="M10 12L6 8L10 4"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
         </button>
 
-        {/* Album tracklist */}
-        {albumTracks.length > 0 && (
-          <div className="mt-5 border-t border-[var(--color-border)] pt-4">
-            <h3 className="text-[var(--color-text-muted)] text-[10px] uppercase tracking-widest mb-2">
-              Album
-            </h3>
-            <div className="max-h-40 overflow-y-auto space-y-1">
-              {albumTracks.map((track) => (
-                <button
-                  key={track.id}
-                  onClick={() => handleTrackClick(track)}
-                  className={`w-full text-left px-2 py-1.5 rounded text-xs cursor-pointer transition-colors ${
-                    track.id === currentTrack.id
-                      ? 'bg-[var(--color-accent)]/20 text-[var(--color-accent)]'
-                      : 'text-[var(--color-text-muted)] hover:bg-white/5 hover:text-[var(--color-text)]'
-                  }`}
-                >
-                  {track.title_short}
-                </button>
-              ))}
+        <div className="px-7 pt-12 pb-7 overflow-y-auto">
+          {/* Now playing dot — pulses when audio is actually flowing */}
+          <div className="flex items-center gap-2 mb-4">
+            <span
+              className={`size-1.5 rounded-full transition-colors ${
+                isPlaying
+                  ? 'bg-[var(--color-accent)] animate-pulse'
+                  : 'bg-white/25'
+              }`}
+            />
+            <span className="text-[10px] uppercase tracking-[0.22em] text-white/35">
+              {autoplayBlocked ? 'En pause' : isPlaying ? 'En lecture' : 'Terminé'}
+            </span>
+          </div>
+
+          {/* Title — the hero */}
+          <h2 className="text-white text-[22px] font-semibold leading-[1.15] tracking-tight">
+            {currentTrack.title_short}
+          </h2>
+          <p className="text-white/70 text-sm mt-1.5">
+            {currentTrack.artist.name}
+          </p>
+          <p className="text-white/35 text-[11px] mt-1">
+            {currentTrack.album.title}
+            {releaseYear && ` · ${releaseYear}`}
+          </p>
+
+          {/* Tap to play — only when autoplay was blocked */}
+          {autoplayBlocked && (
+            <button
+              onClick={resumePlayback}
+              className="mt-5 w-full h-10 rounded-full bg-white text-black text-sm font-medium hover:bg-white/90 active:scale-[0.99] transition-all cursor-pointer flex items-center justify-center gap-2"
+            >
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="currentColor">
+                <path d="M3 2L10 6L3 10V2Z" />
+              </svg>
+              Lancer la lecture
+            </button>
+          )}
+
+          {/* Progress — slim, elegant, tabular-nums for stable timecode */}
+          <div className="mt-6">
+            <div className="h-[3px] bg-white/[0.08] rounded-full overflow-hidden">
+              <div
+                className="h-full bg-white/85 rounded-full transition-[width] duration-200 ease-linear"
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+            <div className="flex justify-between mt-1.5">
+              <span className="text-white/45 text-[11px] tabular-nums">
+                {formatProgress(progress)}
+              </span>
+              <span className="text-white/30 text-[11px] tabular-nums">
+                0:30
+              </span>
             </div>
           </div>
-        )}
+
+          {/* Album drawer */}
+          {albumTracks.length > 1 && (
+            <div className="mt-6 pt-5 border-t border-white/[0.06]">
+              <button
+                onClick={() => setAlbumOpen((v) => !v)}
+                className="flex items-center justify-between w-full text-left cursor-pointer group"
+              >
+                <span className="text-[10px] uppercase tracking-[0.22em] text-white/40 group-hover:text-white/70 transition-colors">
+                  Album · {albumTracks.length} titres
+                </span>
+                <svg
+                  width="10"
+                  height="10"
+                  viewBox="0 0 10 10"
+                  fill="none"
+                  className={`text-white/40 group-hover:text-white/70 transition-all ${albumOpen ? 'rotate-180' : ''}`}
+                >
+                  <path
+                    d="M2 4L5 7L8 4"
+                    stroke="currentColor"
+                    strokeWidth="1.4"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
+
+              {albumOpen && (
+                <div className="mt-3 space-y-px max-h-56 overflow-y-auto -mr-2 pr-2">
+                  {albumTracks.map((track, idx) => {
+                    const isCurrent = track.id === currentTrack.id
+                    return (
+                      <button
+                        key={track.id}
+                        onClick={() => handleTrackClick(track)}
+                        className={`flex items-center gap-3 w-full text-left px-2.5 py-2 rounded-md text-[13px] cursor-pointer transition-colors ${
+                          isCurrent
+                            ? 'bg-white/[0.06] text-white'
+                            : 'text-white/55 hover:bg-white/[0.04] hover:text-white/90'
+                        }`}
+                      >
+                        <span
+                          className={`text-[10px] tabular-nums w-4 text-right ${
+                            isCurrent ? 'text-[var(--color-accent)]' : 'text-white/30'
+                          }`}
+                        >
+                          {idx + 1}
+                        </span>
+                        <span className="flex-1 truncate">{track.title_short}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Deezer link — discreet */}
+          <a
+            href={currentTrack.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 mt-6 text-white/30 text-[11px] hover:text-white/70 transition-colors"
+          >
+            Écouter en intégralité sur Deezer
+            <svg width="9" height="9" viewBox="0 0 10 10" fill="none">
+              <path
+                d="M3 3H7V7M7 3L3 7"
+                stroke="currentColor"
+                strokeWidth="1.4"
+                strokeLinecap="round"
+              />
+            </svg>
+          </a>
+        </div>
       </div>
     </div>
   )

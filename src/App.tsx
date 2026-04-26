@@ -14,7 +14,6 @@ import { TrackInfoPanel } from './components/ui/TrackInfoPanel'
 import { VinylHoverInfo } from './components/ui/VinylHoverInfo'
 import { BrowsingOverlay } from './components/ui/BrowsingOverlay'
 import { useVinylAnimation } from './hooks/useVinylAnimation'
-import { useAudio } from './hooks/useAudio'
 
 const ANIMATION_DURATION_MS = 4000
 
@@ -31,7 +30,6 @@ export default function App(): ReactElement {
 
   useChartTracks(handleChartTracks)
   useVinylAnimation(ANIMATION_DURATION_MS)
-  const { stopPlayback } = useAudio()
 
   const flyingTrack = tracks.find((t) => t.id === selectedVinylId) ?? null
 
@@ -94,7 +92,7 @@ export default function App(): ReactElement {
 
       <SearchBar />
       <BrowsingOverlay />
-      <TrackInfoPanel stopPlayback={stopPlayback} />
+      <TrackInfoPanel />
       <VinylHoverInfo />
     </div>
   )

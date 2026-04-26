@@ -1,9 +1,11 @@
 import { useRef, Suspense } from 'react'
 import type { ReactElement } from 'react'
 import { useFrame, useLoader } from '@react-three/fiber'
-import type { Mesh, Group } from 'three'
+import type { Mesh, Group, PointLight } from 'three'
 import { TextureLoader } from 'three'
 import { usePlayerStore } from '../../stores/playerStore'
+import { useDominantColor, rgbToHex } from '../../hooks/useDominantColor'
+import { useSceneStore } from '../../stores/sceneStore'
 import type { DeezerTrack } from '../../types'
 
 const PLATTER_RADIUS = 0.15
@@ -18,7 +20,7 @@ interface VinylOnPlatterProps {
 }
 
 function VinylOnPlatter({ track }: VinylOnPlatterProps): ReactElement {
-  const discRef = useRef<Mesh>(null)
+  const discRef = useRef<Group>(null)
   const coverTexture = useLoader(TextureLoader, track.album.cover_medium)
   const isPlaying = usePlayerStore((s) => s.isPlaying)
 
@@ -30,19 +32,75 @@ function VinylOnPlatter({ track }: VinylOnPlatterProps): ReactElement {
 
   return (
     <group ref={discRef} position={[0, 0.018, 0]}>
-      {/* Disc body (black, lies flat on the platter) */}
+      {/* Disc body — softer, less metallic so it actually reads against the bright platter */}
       <mesh>
         <cylinderGeometry
           args={[PLATTER_RADIUS - 0.005, PLATTER_RADIUS - 0.005, 0.002, 64]}
         />
-        <meshStandardMaterial color="#0a0a0a" roughness={0.35} metalness={0.7} />
+        <meshStandardMaterial color="#0c0c0c" roughness={0.55} metalness={0.35} />
       </mesh>
-      {/* Colored center label from album cover (slightly above the disc) */}
+      {/* Outer groove highlight ring */}
+      <mesh position={[0, 0.0011, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.13, 0.135, 64]} />
+        <meshStandardMaterial color="#222222" roughness={0.4} metalness={0.5} />
+      </mesh>
+      {/* Inner groove highlight ring */}
+      <mesh position={[0, 0.0011, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.095, 0.098, 64]} />
+        <meshStandardMaterial color="#1f1f1f" roughness={0.35} metalness={0.55} />
+      </mesh>
+      {/* Center label — bigger than real life so the cover art is the hero */}
       <mesh position={[0, 0.0015, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[0.045, 32]} />
-        <meshStandardMaterial map={coverTexture} roughness={0.55} metalness={0.1} />
+        <circleGeometry args={[0.085, 48]} />
+        <meshStandardMaterial
+          map={coverTexture}
+          emissiveMap={coverTexture}
+          emissive="#ffffff"
+          emissiveIntensity={0.42}
+          roughness={0.5}
+          metalness={0.05}
+        />
+      </mesh>
+      {/* Spindle hole — small dark circle at the dead center */}
+      <mesh position={[0, 0.0017, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[0.004, 16]} />
+        <meshBasicMaterial color="#000000" />
       </mesh>
     </group>
+  )
+}
+
+// Atmospheric glow tinted by the playing track's dominant color — same
+// language as the hero's atmosphere at the shelf, so the turntable feels
+// like the same room.
+function TurntableAtmosphere({ track }: { track: DeezerTrack }): ReactElement | null {
+  const color = useDominantColor(track.album.cover_medium)
+  const haloRef = useRef<PointLight>(null)
+  const isPlaying = usePlayerStore((s) => s.isPlaying)
+
+  useFrame(({ clock }) => {
+    if (haloRef.current) {
+      const t = clock.getElapsedTime()
+      // Pulse only while playing — gives the room a heartbeat in lockstep with the music idea
+      const pulse = isPlaying ? 1 + Math.sin(t * 1.2) * 0.08 : 0.6
+      haloRef.current.intensity = 14 * pulse
+    }
+  })
+
+  const hex = color ? rgbToHex(color) : '#ffb066'
+  return (
+    <>
+      {/* Halo behind the plinth — picks up its back edge with the cover's color */}
+      <pointLight ref={haloRef} position={[0, 0.15, -0.45]} intensity={14} color={hex} distance={2.6} decay={1.5} />
+      {/* Front pop — bounces colored light off the platter back into camera */}
+      <pointLight position={[0, 0.08, 0.4]} intensity={5} color={hex} distance={1.6} decay={2} />
+      {/* Warm rim from below — picks out the plinth edge */}
+      <pointLight position={[0, -0.22, 0.25]} intensity={3.5} color={hex} distance={1.8} decay={2} />
+      {/* Side accent from the right — separates plinth from background */}
+      <pointLight position={[0.55, 0.12, 0.05]} intensity={3} color={hex} distance={1.5} decay={2} />
+      {/* Side accent from the left — symmetric atmosphere */}
+      <pointLight position={[-0.55, 0.12, 0.05]} intensity={2.2} color={hex} distance={1.5} decay={2} />
+    </>
   )
 }
 
@@ -51,6 +109,7 @@ export function Turntable(): ReactElement {
   const tonearmRef = useRef<Group>(null)
   const isPlaying = usePlayerStore((s) => s.isPlaying)
   const currentTrack = usePlayerStore((s) => s.currentTrack)
+  const sceneState = useSceneStore((s) => s.state)
 
   useFrame((_, delta) => {
     if (platterRef.current && isPlaying) {
@@ -66,6 +125,9 @@ export function Turntable(): ReactElement {
 
   return (
     <group position={[8, 0, 0]}>
+      {/* Cover-tinted atmosphere only while we're at the turntable */}
+      {sceneState === 'playing' && currentTrack && <TurntableAtmosphere track={currentTrack} />}
+
       {/* Base / plinth */}
       <mesh position={[0, -0.02, 0]}>
         <boxGeometry args={[BASE_WIDTH, BASE_HEIGHT, BASE_DEPTH]} />
