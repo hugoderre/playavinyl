@@ -227,12 +227,17 @@ export function VinylShelf(): ReactElement | null {
             />
           )
 
+          // When isHero flips back to false on scroll, force scale back to 1 —
+          // otherwise R3F doesn't touch the dynamically-set 1.04 hover scale
+          // and the ex-hero stays subtly larger as a stack record.
           return isHero ? (
             <group key={track.id} ref={heroGroupRef}>
               {recordEl}
             </group>
           ) : (
-            <group key={track.id}>{recordEl}</group>
+            <group key={track.id} scale={1}>
+              {recordEl}
+            </group>
           )
         })}
       </Suspense>
