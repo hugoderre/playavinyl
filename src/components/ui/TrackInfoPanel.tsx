@@ -4,6 +4,7 @@ import { usePlayerStore } from '../../stores/playerStore'
 import { useSceneStore } from '../../stores/sceneStore'
 import { getAlbumTracks } from '../../hooks/useDeezer'
 import { useAudio } from '../../hooks/useAudio'
+import { useDominantColor, rgbToHex } from '../../hooks/useDominantColor'
 import { formatProgress } from '../../utils/formatters'
 import type { DeezerTrack } from '../../types'
 
@@ -20,6 +21,8 @@ export function TrackInfoPanel(): ReactElement | null {
   const selectVinyl = useSceneStore((s) => s.selectVinyl)
   const { resumePlayback } = useAudio()
   const [albumOpen, setAlbumOpen] = useState(false)
+  const dominantRgb = useDominantColor(currentTrack?.album.cover_big)
+  const accentColor = dominantRgb ? rgbToHex(dominantRgb) : '#ffb066'
 
   useEffect(
     () => {
@@ -53,14 +56,11 @@ export function TrackInfoPanel(): ReactElement | null {
     <div className="absolute right-6 top-1/2 -translate-y-1/2 z-40 w-[clamp(300px,28vw,380px)] max-h-[80vh] animate-fade-in-soft">
       <div className="relative rounded-3xl bg-black/55 backdrop-blur-2xl border border-white/[0.08] shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8)] flex flex-col max-h-[80vh]">
         <div className="px-7 pt-7 pb-7 overflow-y-auto">
-          {/* Status pill — pulses with audio flow */}
+          {/* Status pill — pulses with audio flow, tinted by the cover */}
           <div className="flex items-center gap-2 mb-4">
             <span
-              className={`size-1.5 rounded-full transition-colors ${
-                isPlaying
-                  ? 'bg-[var(--color-accent)] animate-pulse'
-                  : 'bg-white/25'
-              }`}
+              className={`size-1.5 rounded-full transition-colors ${isPlaying ? 'animate-pulse' : ''}`}
+              style={{ backgroundColor: isPlaying ? accentColor : 'rgba(255,255,255,0.25)' }}
             />
             <span className="text-[10px] uppercase tracking-[0.22em] text-white/40">
               {autoplayBlocked ? 'En pause' : isPlaying ? 'En lecture' : 'Terminé'}
@@ -91,12 +91,16 @@ export function TrackInfoPanel(): ReactElement | null {
             </button>
           )}
 
-          {/* Progress */}
+          {/* Progress — fill tinted by the cover so the panel feels like part of the record */}
           <div className="mt-6">
             <div className="h-[3px] bg-white/[0.08] rounded-full overflow-hidden">
               <div
-                className="h-full bg-white/85 rounded-full transition-[width] duration-200 ease-linear"
-                style={{ width: `${progressPct}%` }}
+                className="h-full rounded-full transition-[width] duration-200 ease-linear"
+                style={{
+                  width: `${progressPct}%`,
+                  backgroundColor: accentColor,
+                  boxShadow: `0 0 12px ${accentColor}88`,
+                }}
               />
             </div>
             <div className="flex justify-between mt-1.5">
@@ -159,9 +163,10 @@ export function TrackInfoPanel(): ReactElement | null {
                           }`}
                         >
                           <span
-                            className={`text-[10px] tabular-nums w-4 text-right shrink-0 ${
-                              isCurrent ? 'text-[var(--color-accent)]' : 'text-white/30'
-                            }`}
+                            className="text-[10px] tabular-nums w-4 text-right shrink-0"
+                            style={{
+                              color: isCurrent ? accentColor : 'rgba(255,255,255,0.3)',
+                            }}
                           >
                             {idx + 1}
                           </span>

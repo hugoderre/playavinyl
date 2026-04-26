@@ -43,7 +43,13 @@ export function VinylRecord({
 
   const handlePointerEnter = (e: ThreeEvent<PointerEvent>): void => {
     onPointerEnter?.()
-    if (interactive) document.body.style.cursor = 'pointer'
+    if (interactive) {
+      document.body.style.cursor = 'pointer'
+      // The hero's title is already shown at the bottom-left; a hover
+      // tooltip would be redundant. Show the tooltip only for stack peeks
+      // — that's where hover actually adds information.
+      return
+    }
     window.dispatchEvent(
       new CustomEvent('vinyl-hover', {
         detail: { track, x: e.nativeEvent.clientX, y: e.nativeEvent.clientY },
@@ -53,7 +59,10 @@ export function VinylRecord({
 
   const handlePointerLeave = (): void => {
     onPointerLeave?.()
-    if (interactive) document.body.style.cursor = 'default'
+    if (interactive) {
+      document.body.style.cursor = 'default'
+      return
+    }
     window.dispatchEvent(
       new CustomEvent('vinyl-hover', {
         detail: { track: null, x: 0, y: 0 },
