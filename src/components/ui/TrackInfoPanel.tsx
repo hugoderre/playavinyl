@@ -18,8 +18,7 @@ export function TrackInfoPanel(): ReactElement | null {
   const albumTracks = useSceneStore((s) => s.albumTracks)
   const setAlbumTracks = useSceneStore((s) => s.setAlbumTracks)
   const selectVinyl = useSceneStore((s) => s.selectVinyl)
-  const clearSelection = useSceneStore((s) => s.clearSelection)
-  const { resumePlayback, stopPlayback } = useAudio()
+  const { resumePlayback } = useAudio()
   const [albumOpen, setAlbumOpen] = useState(false)
 
   useEffect(
@@ -31,7 +30,6 @@ export function TrackInfoPanel(): ReactElement | null {
     [currentTrack?.album.id, setAlbumTracks],
   )
 
-  // Reset album drawer state when the track changes
   useEffect(() => {
     setAlbumOpen(false)
   }, [currentTrack?.id])
@@ -43,38 +41,19 @@ export function TrackInfoPanel(): ReactElement | null {
     [selectVinyl],
   )
 
-  const handleBack = useCallback(() => {
-    clearSelection()
-    stopPlayback()
-  }, [clearSelection, stopPlayback])
-
   if (sceneState !== 'playing' || !currentTrack) return null
 
   const progressPct = Math.min(100, (progress / PREVIEW_DURATION) * 100)
   const releaseYear = currentTrack.album.release_date?.slice(0, 4)
+  const albumLine = releaseYear
+    ? `${currentTrack.album.title} · ${releaseYear}`
+    : currentTrack.album.title
 
   return (
-    <div className="absolute right-8 top-1/2 -translate-y-1/2 z-50 w-[340px] max-h-[80vh]">
-      <div className="relative rounded-3xl bg-black/45 backdrop-blur-2xl border border-white/[0.08] shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col max-h-[80vh]">
-        {/* Top — back button */}
-        <button
-          onClick={handleBack}
-          className="absolute top-4 left-4 z-10 text-white/40 hover:text-white/90 transition-colors p-1.5 cursor-pointer"
-          aria-label="Retour au bac"
-        >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path
-              d="M10 12L6 8L10 4"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
-
-        <div className="px-7 pt-12 pb-7 overflow-y-auto">
-          {/* Now playing dot — pulses when audio is actually flowing */}
+    <div className="absolute right-6 top-1/2 -translate-y-1/2 z-40 w-[clamp(300px,28vw,380px)] max-h-[80vh]">
+      <div className="relative rounded-3xl bg-black/55 backdrop-blur-2xl border border-white/[0.08] shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8)] flex flex-col max-h-[80vh]">
+        <div className="px-7 pt-7 pb-7 overflow-y-auto">
+          {/* Status pill — pulses with audio flow */}
           <div className="flex items-center gap-2 mb-4">
             <span
               className={`size-1.5 rounded-full transition-colors ${
@@ -83,21 +62,20 @@ export function TrackInfoPanel(): ReactElement | null {
                   : 'bg-white/25'
               }`}
             />
-            <span className="text-[10px] uppercase tracking-[0.22em] text-white/35">
+            <span className="text-[10px] uppercase tracking-[0.22em] text-white/40">
               {autoplayBlocked ? 'En pause' : isPlaying ? 'En lecture' : 'Terminé'}
             </span>
           </div>
 
-          {/* Title — the hero */}
-          <h2 className="text-white text-[22px] font-semibold leading-[1.15] tracking-tight">
+          {/* Title — the hero. line-clamp-2 so very long titles never overflow */}
+          <h2 className="text-white text-[22px] font-semibold leading-[1.18] tracking-tight line-clamp-2 break-words">
             {currentTrack.title_short}
           </h2>
-          <p className="text-white/70 text-sm mt-1.5">
+          <p className="text-white/75 text-sm mt-1.5 truncate">
             {currentTrack.artist.name}
           </p>
-          <p className="text-white/35 text-[11px] mt-1">
-            {currentTrack.album.title}
-            {releaseYear && ` · ${releaseYear}`}
+          <p className="text-white/40 text-[11px] mt-1 truncate" title={albumLine}>
+            {albumLine}
           </p>
 
           {/* Tap to play — only when autoplay was blocked */}
@@ -113,7 +91,7 @@ export function TrackInfoPanel(): ReactElement | null {
             </button>
           )}
 
-          {/* Progress — slim, elegant, tabular-nums for stable timecode */}
+          {/* Progress */}
           <div className="mt-6">
             <div className="h-[3px] bg-white/[0.08] rounded-full overflow-hidden">
               <div
@@ -122,7 +100,7 @@ export function TrackInfoPanel(): ReactElement | null {
               />
             </div>
             <div className="flex justify-between mt-1.5">
-              <span className="text-white/45 text-[11px] tabular-nums">
+              <span className="text-white/50 text-[11px] tabular-nums">
                 {formatProgress(progress)}
               </span>
               <span className="text-white/30 text-[11px] tabular-nums">
@@ -138,7 +116,7 @@ export function TrackInfoPanel(): ReactElement | null {
                 onClick={() => setAlbumOpen((v) => !v)}
                 className="flex items-center justify-between w-full text-left cursor-pointer group"
               >
-                <span className="text-[10px] uppercase tracking-[0.22em] text-white/40 group-hover:text-white/70 transition-colors">
+                <span className="text-[10px] uppercase tracking-[0.22em] text-white/45 group-hover:text-white/80 transition-colors truncate">
                   Album · {albumTracks.length} titres
                 </span>
                 <svg
@@ -146,7 +124,7 @@ export function TrackInfoPanel(): ReactElement | null {
                   height="10"
                   viewBox="0 0 10 10"
                   fill="none"
-                  className={`text-white/40 group-hover:text-white/70 transition-all ${albumOpen ? 'rotate-180' : ''}`}
+                  className={`shrink-0 ml-2 text-white/45 group-hover:text-white/80 transition-all ${albumOpen ? 'rotate-180' : ''}`}
                 >
                   <path
                     d="M2 4L5 7L8 4"
@@ -173,7 +151,7 @@ export function TrackInfoPanel(): ReactElement | null {
                         }`}
                       >
                         <span
-                          className={`text-[10px] tabular-nums w-4 text-right ${
+                          className={`text-[10px] tabular-nums w-4 text-right shrink-0 ${
                             isCurrent ? 'text-[var(--color-accent)]' : 'text-white/30'
                           }`}
                         >
@@ -188,15 +166,15 @@ export function TrackInfoPanel(): ReactElement | null {
             </div>
           )}
 
-          {/* Deezer link — discreet */}
+          {/* Deezer link */}
           <a
             href={currentTrack.link}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 mt-6 text-white/30 text-[11px] hover:text-white/70 transition-colors"
+            className="inline-flex items-center gap-1.5 mt-6 text-white/35 text-[11px] hover:text-white/80 transition-colors"
           >
             Écouter en intégralité sur Deezer
-            <svg width="9" height="9" viewBox="0 0 10 10" fill="none">
+            <svg width="9" height="9" viewBox="0 0 10 10" fill="none" className="shrink-0">
               <path
                 d="M3 3H7V7M7 3L3 7"
                 stroke="currentColor"

@@ -10,10 +10,15 @@
   --color-border: rgba(255, 255, 255, 0.08);
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+/* Wrapped in @layer base so Tailwind utilities (pl-12, m-4, …) can override.
+   Without the layer this universal rule was outside the cascade layers and
+   silently won every padding/margin/box-sizing fight. */
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
 }
 
 body {

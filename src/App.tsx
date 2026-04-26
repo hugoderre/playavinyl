@@ -13,6 +13,7 @@ import { SearchBar } from './components/ui/SearchBar'
 import { TrackInfoPanel } from './components/ui/TrackInfoPanel'
 import { VinylHoverInfo } from './components/ui/VinylHoverInfo'
 import { BrowsingOverlay } from './components/ui/BrowsingOverlay'
+import { BackToShelf } from './components/ui/BackToShelf'
 import { useVinylAnimation } from './hooks/useVinylAnimation'
 
 const ANIMATION_DURATION_MS = 4000
@@ -92,6 +93,7 @@ export default function App(): ReactElement {
 
       <SearchBar />
       <BrowsingOverlay />
+      <BackToShelf />
       <TrackInfoPanel />
       <VinylHoverInfo />
     </div>
