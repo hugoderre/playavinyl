@@ -42,7 +42,7 @@ export default function App(): ReactElement {
         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
         gl={{ antialias: true, alpha: false }}
         onCreated={({ gl }) => {
-          gl.setClearColor('#0a0a0a')
+          gl.setClearColor('#070605')
         }}
       >
         <SceneManager />
