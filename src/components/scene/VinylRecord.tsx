@@ -42,6 +42,10 @@ export function VinylRecord({
   const coverTexture = useLoader(TextureLoader, track.album.cover_big)
 
   const handlePointerEnter = (e: ThreeEvent<PointerEvent>): void => {
+    // Stop propagation so the same ray doesn't ALSO trigger pointerEnter on
+    // the records behind us — otherwise their later dispatch overwrites this
+    // one in VinylHoverInfo's state and the user sees the wrong tooltip.
+    e.stopPropagation()
     onPointerEnter?.()
     if (interactive) {
       document.body.style.cursor = 'pointer'
@@ -57,7 +61,8 @@ export function VinylRecord({
     )
   }
 
-  const handlePointerLeave = (): void => {
+  const handlePointerLeave = (e: ThreeEvent<PointerEvent>): void => {
+    e.stopPropagation()
     onPointerLeave?.()
     if (interactive) {
       document.body.style.cursor = 'default'
@@ -75,7 +80,7 @@ export function VinylRecord({
       {/* Visible sleeve with cover art */}
       <mesh
         onPointerEnter={(e) => handlePointerEnter(e)}
-        onPointerLeave={handlePointerLeave}
+        onPointerLeave={(e) => handlePointerLeave(e)}
       >
         <boxGeometry args={[SLEEVE_SIZE, SLEEVE_SIZE, SLEEVE_THICKNESS]} />
         <meshStandardMaterial
