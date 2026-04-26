@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react'
-import { useCallback } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { useSearchStore } from '../../stores/searchStore'
 import { useSceneStore } from '../../stores/sceneStore'
 import { useDeezerSearch } from '../../hooks/useDeezer'
@@ -25,11 +25,31 @@ export function SearchBar(): ReactElement | null {
 
   useDeezerSearch(query, handleResults, setLoading)
 
-  const handleClear = (): void => {
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const handleClear = useCallback((): void => {
     clearSearch()
     // Restore the charts. fetchCached hits the in-memory cache — no extra round-trip.
     getChartTracks().then((charts) => setTracks(charts))
-  }
+  }, [clearSearch, setTracks])
+
+  // ESC inside the search clears the query and blurs the input — matches
+  // the standard search-field UX (see GitHub, Spotify, Linear, etc.).
+  useEffect(() => {
+    const input = inputRef.current
+    if (!input) return
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') {
+        if (query.length > 0) {
+          e.preventDefault()
+          handleClear()
+        }
+        input.blur()
+      }
+    }
+    input.addEventListener('keydown', onKey)
+    return (): void => input.removeEventListener('keydown', onKey)
+  }, [query, handleClear])
 
   // Search is a browsing affordance — at the turntable the user is listening,
   // not searching, so we hide it to keep the playing scene serene.
@@ -66,6 +86,7 @@ export function SearchBar(): ReactElement | null {
         </svg>
 
         <input
+          ref={inputRef}
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}

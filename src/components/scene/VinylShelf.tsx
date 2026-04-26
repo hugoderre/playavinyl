@@ -97,6 +97,10 @@ export function VinylShelf(): ReactElement | null {
     }
 
     const handleKey = (e: KeyboardEvent): void => {
+      // Don't hijack cursor keys / Enter while the user is typing in the search bar.
+      const active = document.activeElement
+      if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) return
+
       const { scrollPosition: current, tracks: ts } = useSceneStore.getState()
       const maxScroll = Math.max(0, ts.length - 1)
       if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
@@ -111,6 +115,14 @@ export function VinylShelf(): ReactElement | null {
           .getState()
           .setScrollPosition(Math.max(0, Math.round(current) - 1))
         lastInteractionRef.current = 0
+      } else if (e.key === 'Enter' || e.key === ' ') {
+        // Enter/Space plays the hero — primary keyboard action while browsing.
+        const heroIdx = Math.round(current)
+        const heroTrack = ts[heroIdx]
+        if (heroTrack) {
+          e.preventDefault()
+          useSceneStore.getState().selectVinyl(heroTrack.id)
+        }
       }
     }
 

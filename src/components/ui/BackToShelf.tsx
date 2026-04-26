@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react'
-import { useCallback } from 'react'
+import { useCallback, useEffect } from 'react'
 import { useSceneStore } from '../../stores/sceneStore'
 import { useAudio } from '../../hooks/useAudio'
 
@@ -15,6 +15,19 @@ export function BackToShelf(): ReactElement | null {
     clearSelection()
     stopPlayback()
   }, [clearSelection, stopPlayback])
+
+  // ESC anywhere in 'playing' returns to the shelf. Standard UX, free win.
+  useEffect(() => {
+    if (sceneState !== 'playing') return
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        handleBack()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return (): void => window.removeEventListener('keydown', onKey)
+  }, [sceneState, handleBack])
 
   if (sceneState !== 'playing') return null
 
