@@ -78,6 +78,9 @@ export function VinylShelf(): ReactElement | null {
   const lastInteractionRef = useRef(0)
   const breathRef = useRef<Group>(null)
   const mouseRef = useRef({ x: 0, y: 0 })
+  const heroHoverRef = useRef(false)
+  const heroScaleRef = useRef(1)
+  const heroGroupRef = useRef<Group>(null)
 
   useEffect(() => {
     if (sceneState !== 'browsing') return
@@ -145,6 +148,13 @@ export function VinylShelf(): ReactElement | null {
       breathRef.current.position.y = breathPosY
     }
 
+    // Hero hover-scale — signals "I'm clickable" without ever being a pop-up.
+    if (heroGroupRef.current) {
+      const target = heroHoverRef.current && sceneState === 'browsing' ? 1.04 : 1
+      heroScaleRef.current += (target - heroScaleRef.current) * 0.16
+      heroGroupRef.current.scale.setScalar(heroScaleRef.current)
+    }
+
     if (sceneState !== 'browsing') return
     if (performance.now() - lastInteractionRef.current < SETTLE_DELAY_MS) return
     const target = Math.round(scrollPosition)
@@ -183,15 +193,27 @@ export function VinylShelf(): ReactElement | null {
           const p = placementForDepth(depth)
           if (p.opacity < 0.02) return null
 
-          return (
+          // The hero (depth ≈ 0) gets a hover-scale wrapper so it grows
+          // subtly when the user mouses over — clear "I'm clickable" signal.
+          const isHero = Math.abs(depth) < 0.5
+          const recordEl = (
             <VinylRecord
-              key={track.id}
               track={track}
               position={[p.x, p.y, p.z]}
               rotation={[0, p.rotY, 0]}
               opacity={p.opacity}
               onClick={() => sceneState === 'browsing' && selectVinyl(track.id)}
+              onPointerEnter={isHero ? () => { heroHoverRef.current = true } : undefined}
+              onPointerLeave={isHero ? () => { heroHoverRef.current = false } : undefined}
             />
+          )
+
+          return isHero ? (
+            <group key={track.id} ref={heroGroupRef}>
+              {recordEl}
+            </group>
+          ) : (
+            <group key={track.id}>{recordEl}</group>
           )
         })}
       </Suspense>
