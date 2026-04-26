@@ -1,7 +1,7 @@
 import { useEffect, useRef, Suspense } from 'react'
 import type { ReactElement } from 'react'
 import { useThree, useFrame } from '@react-three/fiber'
-import type { Group } from 'three'
+import type { Group, PointLight } from 'three'
 import { VinylRecord } from './VinylRecord'
 import { useSceneStore } from '../../stores/sceneStore'
 import { useDominantColor, rgbToHex } from '../../hooks/useDominantColor'
@@ -202,9 +202,22 @@ export function VinylShelf(): ReactElement | null {
 
 // Atmosphere tinted by the hero's dominant color. No furniture, no crate —
 // just light shaping space around the record.
+const HALO_BASE_INTENSITY = 28
+
 function HeroAtmosphere({ track }: { track: DeezerTrack }): ReactElement | null {
   const color = useDominantColor(track.album.cover_medium)
   const hex = color ? rgbToHex(color) : '#ffb066'
+  const haloRef = useRef<PointLight>(null)
+
+  // Subtle breathing pulse on the halo — locks the scene's heartbeat
+  // visible without ever drawing attention to itself.
+  useFrame(({ clock }) => {
+    if (haloRef.current) {
+      const t = clock.getElapsedTime()
+      haloRef.current.intensity = HALO_BASE_INTENSITY * (1 + Math.sin(t * 0.42 + 1.3) * 0.075)
+    }
+  })
+
   return (
     <>
       {/* Warm key from front-left — sculpts the cover face, works on any color */}
@@ -212,8 +225,8 @@ function HeroAtmosphere({ track }: { track: DeezerTrack }): ReactElement | null 
       {/* Tight warm fill from the right — adds a second highlight, prevents flatness */}
       <pointLight position={[0.35, -0.05, 0.55]} intensity={2.4} color="#ffd9a8" distance={1.5} decay={2} />
 
-      {/* Big colored halo behind the hero — atmospheric bloom */}
-      <pointLight position={[0, 0.0, -0.7]} intensity={28} color={hex} distance={3.6} decay={1.4} />
+      {/* Big colored halo behind the hero — pulses gently with the scene's breath */}
+      <pointLight ref={haloRef} position={[0, 0.0, -0.7]} intensity={HALO_BASE_INTENSITY} color={hex} distance={3.6} decay={1.4} />
       {/* Close pop in front, tinted by cover */}
       <pointLight position={[-0.05, 0.05, 0.45]} intensity={4.5} color={hex} distance={1.6} decay={2} />
       {/* Warm rim from below — grounds the record without drawing a floor */}
