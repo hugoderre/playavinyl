@@ -93,11 +93,19 @@ export function FlyingVinyl({
 
   return (
     <group ref={groupRef}>
-      {/* Sleeve with cover art */}
+      {/* Travelling warm key — the vinyl carries its own light through the void */}
+      <pointLight position={[0, 0, 0.4]} intensity={9} color="#fff0d8" distance={2.5} decay={1.8} />
+      {/* Tinted halo behind it so it reads as a comet */}
+      <pointLight position={[0, 0, -0.35]} intensity={6} color="#ffb066" distance={2} decay={1.6} />
+
+      {/* Sleeve with cover art — self-emissive so the cover stays readable mid-flight */}
       <mesh ref={sleeveRef}>
         <boxGeometry args={[SLEEVE_SIZE, SLEEVE_SIZE, SLEEVE_THICKNESS]} />
         <meshStandardMaterial
           map={coverTexture}
+          emissiveMap={coverTexture}
+          emissive="#ffffff"
+          emissiveIntensity={0.32}
           side={DoubleSide}
           roughness={0.7}
           metalness={0.0}
@@ -109,10 +117,17 @@ export function FlyingVinyl({
           <cylinderGeometry args={[DISC_RADIUS, DISC_RADIUS, DISC_THICKNESS, 64]} />
           <meshStandardMaterial color="#0a0a0a" roughness={0.3} metalness={0.8} />
         </mesh>
-        {/* Colored center label */}
+        {/* Colored center label — glows subtly so the disc has a beating heart */}
         <mesh position={[0, DISC_THICKNESS / 2 + 0.0005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <circleGeometry args={[0.045, 32]} />
-          <meshStandardMaterial map={coverTexture} roughness={0.55} metalness={0.1} />
+          <meshStandardMaterial
+            map={coverTexture}
+            emissiveMap={coverTexture}
+            emissive="#ffffff"
+            emissiveIntensity={0.4}
+            roughness={0.55}
+            metalness={0.1}
+          />
         </mesh>
       </group>
     </group>
