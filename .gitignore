@@ -28,3 +28,13 @@ dist-ssr
 # image assets live in src/assets/)
 .playwright-mcp/
 /*.png
+
+# Local AI assistant/tooling context
+.claude/
+.codex/
+.cursor/
+.superpowers/
+.windsurf/
+AGENTS.md
+CLAUDE.md
+docs/superpowers/
