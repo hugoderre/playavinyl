@@ -28,7 +28,7 @@ export function SceneLighting(): ReactElement {
       {/* Tight warm key light from above-front, focused on the hero zone */}
       <pointLight
         position={[0, 1.6, 1.2]}
-        intensity={14}
+        intensity={8}
         color="#fff0d8"
         distance={5}
         decay={2}

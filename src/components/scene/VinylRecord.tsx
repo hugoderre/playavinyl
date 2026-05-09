@@ -42,37 +42,15 @@ export function VinylRecord({
   const coverTexture = useLoader(TextureLoader, track.album.cover_big)
 
   const handlePointerEnter = (e: ThreeEvent<PointerEvent>): void => {
-    // Stop propagation so the same ray doesn't ALSO trigger pointerEnter on
-    // the records behind us — otherwise their later dispatch overwrites this
-    // one in VinylHoverInfo's state and the user sees the wrong tooltip.
     e.stopPropagation()
     onPointerEnter?.()
-    if (interactive) {
-      document.body.style.cursor = 'pointer'
-      // The hero's title is already shown at the bottom-left; a hover
-      // tooltip would be redundant. Show the tooltip only for stack peeks
-      // — that's where hover actually adds information.
-      return
-    }
-    window.dispatchEvent(
-      new CustomEvent('vinyl-hover', {
-        detail: { track, x: e.nativeEvent.clientX, y: e.nativeEvent.clientY },
-      }),
-    )
+    if (interactive) document.body.style.cursor = 'pointer'
   }
 
   const handlePointerLeave = (e: ThreeEvent<PointerEvent>): void => {
     e.stopPropagation()
     onPointerLeave?.()
-    if (interactive) {
-      document.body.style.cursor = 'default'
-      return
-    }
-    window.dispatchEvent(
-      new CustomEvent('vinyl-hover', {
-        detail: { track: null, x: 0, y: 0 },
-      }),
-    )
+    if (interactive) document.body.style.cursor = 'default'
   }
 
   return (

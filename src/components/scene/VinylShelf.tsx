@@ -1,11 +1,11 @@
-import { useEffect, useRef, Suspense } from 'react'
+import { useEffect, useMemo, useRef, Suspense } from 'react'
 import type { ReactElement } from 'react'
 import { useThree, useFrame, useLoader } from '@react-three/fiber'
-import { TextureLoader } from 'three'
+import { Color, TextureLoader } from 'three'
 import type { Group, PointLight } from 'three'
 import { VinylRecord } from './VinylRecord'
 import { useSceneStore } from '../../stores/sceneStore'
-import { useDominantColor, rgbToHex } from '../../hooks/useDominantColor'
+import { useDominantColor } from '../../hooks/useDominantColor'
 import type { DeezerTrack } from '../../types'
 
 // One vinyl is the hero, fully facing the camera. Everything else is
@@ -190,6 +190,15 @@ export function VinylShelf(): ReactElement | null {
   const heroIdx = Math.round(scrollPosition)
   const heroTrack = tracks[heroIdx]
 
+  // Atmosphere blends between the two tracks the scroll currently sits between,
+  // so the lighting tint never jumps when the hero index flips. We pick floor +
+  // ceil so the lerp tracks the visible crossfade between records.
+  const floorIdx = Math.max(0, Math.min(tracks.length - 1, Math.floor(scrollPosition)))
+  const ceilIdx = Math.max(0, Math.min(tracks.length - 1, floorIdx + 1))
+  const blendFrac = Math.min(1, Math.max(0, scrollPosition - floorIdx))
+  const trackA = tracks[floorIdx]
+  const trackB = tracks[ceilIdx]
+
   // Render window: one record leaving + the hero + the stack.
   const renderItems: { track: DeezerTrack; depth: number }[] = []
   for (let i = -1; i <= STACK_DEPTH; i++) {
@@ -203,7 +212,7 @@ export function VinylShelf(): ReactElement | null {
 
   return (
     <group>
-      {heroTrack && <HeroAtmosphere track={heroTrack} />}
+      {heroTrack && <HeroAtmosphere trackA={trackA} trackB={trackB} blend={blendFrac} />}
 
       <group ref={breathRef}>
         {renderItems.map(({ track, depth }) => {
@@ -259,35 +268,69 @@ export function VinylShelf(): ReactElement | null {
 // Atmosphere tinted by the hero's dominant color. No furniture, no crate —
 // just light shaping space around the record.
 const HALO_BASE_INTENSITY = 28
+const FALLBACK_TINT: [number, number, number] = [255, 176, 102] // #ffb066
 
-function HeroAtmosphere({ track }: { track: DeezerTrack }): ReactElement | null {
+function HeroAtmosphere({
+  trackA,
+  trackB,
+  blend,
+}: {
+  trackA: DeezerTrack | undefined
+  trackB: DeezerTrack | undefined
+  blend: number
+}): ReactElement | null {
   // Use cover_big to share the cache with the visible record texture — same URL → one fetch.
-  const color = useDominantColor(track.album.cover_big)
-  const hex = color ? rgbToHex(color) : '#ffb066'
-  const haloRef = useRef<PointLight>(null)
+  const colorA = useDominantColor(trackA?.album.cover_big)
+  const colorB = useDominantColor(trackB?.album.cover_big)
 
-  // Subtle breathing pulse on the halo — locks the scene's heartbeat
-  // visible without ever drawing attention to itself.
+  const haloRef = useRef<PointLight>(null)
+  const popRef = useRef<PointLight>(null)
+  const rimRef = useRef<PointLight>(null)
+  // A single mutable Color we re-use each frame to avoid per-frame allocations.
+  const tintRef = useRef<Color>(useMemo(() => new Color(), []))
+  // The currently-applied tint, eased toward the lerped target each frame so a
+  // dominant color that lands late (cache miss) fades in instead of popping.
+  const currentRef = useRef<[number, number, number]>([...FALLBACK_TINT])
+
   useFrame(({ clock }) => {
+    const a = colorA ?? colorB ?? FALLBACK_TINT
+    const b = colorB ?? colorA ?? FALLBACK_TINT
+    const targetR = a[0] * (1 - blend) + b[0] * blend
+    const targetG = a[1] * (1 - blend) + b[1] * blend
+    const targetB = a[2] * (1 - blend) + b[2] * blend
+
+    // Critically-damped feel: catch up fast enough that the tint tracks the
+    // scroll, but slow enough to absorb a late-arriving dominant color without
+    // a visible step.
+    const k = 0.18
+    const cur = currentRef.current
+    cur[0] += (targetR - cur[0]) * k
+    cur[1] += (targetG - cur[1]) * k
+    cur[2] += (targetB - cur[2]) * k
+    tintRef.current.setRGB(cur[0] / 255, cur[1] / 255, cur[2] / 255)
+
     if (haloRef.current) {
+      haloRef.current.color.copy(tintRef.current)
       const t = clock.getElapsedTime()
       haloRef.current.intensity = HALO_BASE_INTENSITY * (1 + Math.sin(t * 0.42 + 1.3) * 0.075)
     }
+    if (popRef.current) popRef.current.color.copy(tintRef.current)
+    if (rimRef.current) rimRef.current.color.copy(tintRef.current)
   })
 
   return (
     <>
       {/* Warm key from front-left — sculpts the cover face, works on any color */}
-      <pointLight position={[-0.22, 0.28, 0.6]} intensity={6.5} color="#fff0d8" distance={2.0} decay={2} />
+      <pointLight position={[-0.22, 0.28, 0.6]} intensity={3.2} color="#fff0d8" distance={2.0} decay={2} />
       {/* Tight warm fill from the right — adds a second highlight, prevents flatness */}
-      <pointLight position={[0.35, -0.05, 0.55]} intensity={2.4} color="#ffd9a8" distance={1.5} decay={2} />
+      <pointLight position={[0.35, -0.05, 0.55]} intensity={1.2} color="#ffd9a8" distance={1.5} decay={2} />
 
       {/* Big colored halo behind the hero — pulses gently with the scene's breath */}
-      <pointLight ref={haloRef} position={[0, 0.0, -0.7]} intensity={HALO_BASE_INTENSITY} color={hex} distance={3.6} decay={1.4} />
+      <pointLight ref={haloRef} position={[0, 0.0, -0.7]} intensity={HALO_BASE_INTENSITY} distance={3.6} decay={1.4} />
       {/* Close pop in front, tinted by cover */}
-      <pointLight position={[-0.05, 0.05, 0.45]} intensity={4.5} color={hex} distance={1.6} decay={2} />
+      <pointLight ref={popRef} position={[-0.05, 0.05, 0.45]} intensity={2.0} distance={1.6} decay={2} />
       {/* Warm rim from below — grounds the record without drawing a floor */}
-      <pointLight position={[0, -0.32, 0.25]} intensity={4.2} color={hex} distance={1.6} decay={2} />
+      <pointLight ref={rimRef} position={[0, -0.32, 0.25]} intensity={2.0} distance={1.6} decay={2} />
     </>
   )
 }
