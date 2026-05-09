@@ -20,8 +20,7 @@ motion, and just enough UI to help the user keep browsing.
 - A turntable scene with spinning platter inertia, tonearm progress, dust motes,
   fog, and cover-tinted atmosphere.
 - Deezer chart and search discovery with playable 30-second previews.
-- Keyboard shortcuts for fast browsing: arrows, Enter/Space, Escape, and Cmd/Ctrl
-  + K.
+- Keyboard shortcuts for fast browsing: arrows, Enter/Space, Escape, and Cmd/Ctrl + K.
 
 ## Stack
 
