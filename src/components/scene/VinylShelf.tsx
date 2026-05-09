@@ -82,6 +82,8 @@ export function VinylShelf(): ReactElement | null {
   const heroHoverRef = useRef(false)
   const heroScaleRef = useRef(1)
   const heroGroupRef = useRef<Group>(null)
+  // Flick momentum — scrollPosition delta per frame, decays exponentially.
+  const momentumRef = useRef(0)
 
   // Preload cover textures in a window around the current hero so VinylRecord
   // never suspends mid-scroll. We use heroIdx (integer) as dependency so this
@@ -137,32 +139,60 @@ export function VinylShelf(): ReactElement | null {
       }
     }
 
-    // Touch swipe — mobile scroll
+    // Touch swipe — mobile scroll with flick momentum
     let touchStartX = 0
     let touchStartY = 0
     let touchStartScroll = 0
     let touchStartTime = 0
+    let lastSampleX = 0
+    let lastSampleY = 0
+    let lastSampleTime = 0
+    let lastDominantAxis: 'x' | 'y' | null = null
+    // Velocity in scrollPosition-units per ms, sampled from the last touchmove
+    let velocity = 0
 
     const handleTouchStart = (e: TouchEvent): void => {
       const t = e.touches[0]
       touchStartX = t.clientX
       touchStartY = t.clientY
+      lastSampleX = t.clientX
+      lastSampleY = t.clientY
       touchStartScroll = useSceneStore.getState().scrollPosition
       touchStartTime = performance.now()
+      lastSampleTime = touchStartTime
+      lastDominantAxis = null
+      velocity = 0
+      // Cancel any in-flight momentum from a prior flick
+      momentumRef.current = 0
     }
 
     const handleTouchMove = (e: TouchEvent): void => {
       e.preventDefault()
       const t = e.touches[0]
+      const now = performance.now()
       const dx = t.clientX - touchStartX
       const dy = t.clientY - touchStartY
-      // Use the dominant axis; swipe left/right or up/down both scroll the crate
-      const delta = Math.abs(dx) >= Math.abs(dy) ? -dx : dy
+      // Lock the dominant axis on first significant movement so a slight
+      // diagonal mid-swipe doesn't flip horizontal↔vertical mapping.
+      if (!lastDominantAxis && (Math.abs(dx) > 6 || Math.abs(dy) > 6)) {
+        lastDominantAxis = Math.abs(dx) >= Math.abs(dy) ? 'x' : 'y'
+      }
+      const axis = lastDominantAxis ?? (Math.abs(dx) >= Math.abs(dy) ? 'x' : 'y')
+      const delta = axis === 'x' ? -dx : dy
+      const sampleDelta = axis === 'x' ? -(t.clientX - lastSampleX) : t.clientY - lastSampleY
       const { tracks: ts } = useSceneStore.getState()
       const maxScroll = Math.max(0, ts.length - 1)
-      const next = Math.max(0, Math.min(maxScroll, touchStartScroll + delta / window.innerWidth * 4))
+      const scrollPerPx = 4 / window.innerWidth
+      const next = Math.max(0, Math.min(maxScroll, touchStartScroll + delta * scrollPerPx))
       useSceneStore.getState().setScrollPosition(next)
-      lastInteractionRef.current = performance.now()
+      // Velocity sample — instantaneous, smoothed lightly to ignore single-frame jitter
+      const dt = Math.max(1, now - lastSampleTime)
+      const instant = (sampleDelta * scrollPerPx) / dt
+      velocity = velocity * 0.4 + instant * 0.6
+      lastSampleX = t.clientX
+      lastSampleY = t.clientY
+      lastSampleTime = now
+      lastInteractionRef.current = now
     }
 
     const handleTouchEnd = (e: TouchEvent): void => {
@@ -176,10 +206,16 @@ export function VinylShelf(): ReactElement | null {
         const heroIdx = Math.round(current)
         const heroTrack = ts[heroIdx]
         if (heroTrack) useSceneStore.getState().selectVinyl(heroTrack.id)
-      } else {
-        // Settle to nearest integer
-        lastInteractionRef.current = 0
+        return
       }
+      // Stale velocity? If the finger paused before lifting, don't fling.
+      if (performance.now() - lastSampleTime > 80) velocity = 0
+      // Convert velocity (units per ms) into per-frame momentum (~16.67 ms).
+      // The 16 multiplier matches one frame; the cap prevents absurdly fast flicks.
+      const perFrame = velocity * 16
+      momentumRef.current = Math.max(-0.6, Math.min(0.6, perFrame))
+      // The momentum loop in useFrame will hand off to the settle once it decays.
+      lastInteractionRef.current = performance.now()
     }
 
     canvas.addEventListener('wheel', handleWheel, { passive: false })
@@ -230,6 +266,22 @@ export function VinylShelf(): ReactElement | null {
     }
 
     if (sceneState !== 'browsing') return
+
+    // Flick momentum — applied before settle so a fast swipe coasts naturally.
+    // Decays exponentially each frame; below threshold, settle takes over.
+    if (Math.abs(momentumRef.current) > 0.0015) {
+      const { tracks: ts } = useSceneStore.getState()
+      const maxScroll = Math.max(0, ts.length - 1)
+      const next = Math.max(0, Math.min(maxScroll, scrollPosition + momentumRef.current))
+      // If we hit an edge, kill momentum so we don't keep idling against the wall.
+      if (next === 0 || next === maxScroll) momentumRef.current = 0
+      else momentumRef.current *= 0.93
+      setScrollPosition(next)
+      lastInteractionRef.current = performance.now()
+      return
+    }
+    momentumRef.current = 0
+
     if (performance.now() - lastInteractionRef.current < SETTLE_DELAY_MS) return
     const target = Math.round(scrollPosition)
     const diff = target - scrollPosition
