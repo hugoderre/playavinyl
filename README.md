@@ -1,6 +1,6 @@
 # Play a Vinyl
 
-An immersive music discovery experiment where the interface is a record shop.
+An immersive music discovery experiment where the interface is a record shop!
 
 Browse a glowing vinyl crate, choose a sleeve, and watch the record fly across
 the room to a turntable. The platter spins up with inertia, the tonearm drops,
