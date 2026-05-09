@@ -25,9 +25,10 @@ export function BrowsingOverlay(): ReactElement | null {
       </div>
 
       {/* Counter — top-right */}
+      {/* Counter — debug only
       <div className="absolute top-5 right-6 z-40 text-[var(--color-text-muted)] text-xs font-medium tracking-widest opacity-50 pointer-events-none animate-fade-in-soft">
         {centerIdx + 1} / {tracks.length}
-      </div>
+      </div> */}
 
       {/* Scroll affordance — bottom-right. A vertical line with a pellet
           drifting down on loop reads more like motion than the old

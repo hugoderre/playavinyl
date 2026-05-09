@@ -53,9 +53,9 @@ export function TrackInfoPanel(): ReactElement | null {
     : currentTrack.album.title
 
   return (
-    <div className="absolute right-6 top-1/2 -translate-y-1/2 z-40 w-[clamp(300px,28vw,380px)] max-h-[80vh] animate-fade-in-soft">
-      <div className="relative rounded-3xl bg-black/55 backdrop-blur-2xl border border-white/[0.08] shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8)] flex flex-col max-h-[80vh]">
-        <div className="px-7 pt-7 pb-7 overflow-y-auto">
+    <div className="absolute inset-x-0 bottom-0 z-40 animate-fade-in-soft sm:inset-x-auto sm:bottom-auto sm:right-6 sm:top-1/2 sm:-translate-y-1/2 sm:w-[clamp(300px,28vw,380px)]">
+      <div className="relative rounded-t-3xl sm:rounded-3xl bg-black/55 backdrop-blur-2xl border border-white/[0.08] shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8)] flex flex-col max-h-[55vh] sm:max-h-[80vh]">
+        <div className="px-7 pt-7 pb-10 sm:pb-7 overflow-y-auto">
           {/* Status pill — pulses with audio flow, tinted by the cover */}
           <div className="flex items-center gap-2 mb-4">
             <span
