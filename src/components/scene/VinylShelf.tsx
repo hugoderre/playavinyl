@@ -137,10 +137,61 @@ export function VinylShelf(): ReactElement | null {
       }
     }
 
+    // Touch swipe — mobile scroll
+    let touchStartX = 0
+    let touchStartY = 0
+    let touchStartScroll = 0
+    let touchStartTime = 0
+
+    const handleTouchStart = (e: TouchEvent): void => {
+      const t = e.touches[0]
+      touchStartX = t.clientX
+      touchStartY = t.clientY
+      touchStartScroll = useSceneStore.getState().scrollPosition
+      touchStartTime = performance.now()
+    }
+
+    const handleTouchMove = (e: TouchEvent): void => {
+      e.preventDefault()
+      const t = e.touches[0]
+      const dx = t.clientX - touchStartX
+      const dy = t.clientY - touchStartY
+      // Use the dominant axis; swipe left/right or up/down both scroll the crate
+      const delta = Math.abs(dx) >= Math.abs(dy) ? -dx : dy
+      const { tracks: ts } = useSceneStore.getState()
+      const maxScroll = Math.max(0, ts.length - 1)
+      const next = Math.max(0, Math.min(maxScroll, touchStartScroll + delta / window.innerWidth * 4))
+      useSceneStore.getState().setScrollPosition(next)
+      lastInteractionRef.current = performance.now()
+    }
+
+    const handleTouchEnd = (e: TouchEvent): void => {
+      const elapsed = performance.now() - touchStartTime
+      const t = e.changedTouches[0]
+      const dx = Math.abs(t.clientX - touchStartX)
+      const dy = Math.abs(t.clientY - touchStartY)
+      // Tap (< 200ms, < 10px drift) on hero → play
+      if (elapsed < 200 && dx < 10 && dy < 10) {
+        const { scrollPosition: current, tracks: ts } = useSceneStore.getState()
+        const heroIdx = Math.round(current)
+        const heroTrack = ts[heroIdx]
+        if (heroTrack) useSceneStore.getState().selectVinyl(heroTrack.id)
+      } else {
+        // Settle to nearest integer
+        lastInteractionRef.current = 0
+      }
+    }
+
     canvas.addEventListener('wheel', handleWheel, { passive: false })
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: true })
+    canvas.addEventListener('touchmove', handleTouchMove, { passive: false })
+    canvas.addEventListener('touchend', handleTouchEnd, { passive: true })
     window.addEventListener('keydown', handleKey)
     return (): void => {
       canvas.removeEventListener('wheel', handleWheel)
+      canvas.removeEventListener('touchstart', handleTouchStart)
+      canvas.removeEventListener('touchmove', handleTouchMove)
+      canvas.removeEventListener('touchend', handleTouchEnd)
       window.removeEventListener('keydown', handleKey)
     }
   }, [gl, sceneState])
