@@ -83,11 +83,15 @@ export function VinylShelf(): ReactElement | null {
   const heroScaleRef = useRef(1)
   const heroGroupRef = useRef<Group>(null)
 
-  // Preload all cover textures as soon as the track list arrives so
-  // VinylRecord never suspends mid-scroll and causes a frame blackout.
+  // Preload cover textures in a window around the current hero so VinylRecord
+  // never suspends mid-scroll. We use heroIdx (integer) as dependency so this
+  // fires once per snap point, not every animation frame.
+  const heroIdxForPreload = Math.round(scrollPosition)
   useEffect(() => {
-    tracks.forEach((t) => useLoader.preload(TextureLoader, t.album.cover_big))
-  }, [tracks])
+    const start = Math.max(0, heroIdxForPreload - 3)
+    const end = Math.min(tracks.length, heroIdxForPreload + 20)
+    tracks.slice(start, end).forEach((t) => useLoader.preload(TextureLoader, t.album.cover_big))
+  }, [tracks, heroIdxForPreload])
 
   useEffect(() => {
     if (sceneState !== 'browsing') return

@@ -18,7 +18,7 @@ export function SearchBar(): ReactElement | null {
   const handleResults = useCallback(
     (tracks: Parameters<typeof setResults>[0]) => {
       setResults(tracks)
-      setTracks(tracks)
+      setTracks(tracks, 'search')
     },
     [setResults, setTracks],
   )
@@ -30,7 +30,7 @@ export function SearchBar(): ReactElement | null {
   const handleClear = useCallback((): void => {
     clearSearch()
     // Restore the charts. fetchCached hits the in-memory cache — no extra round-trip.
-    getChartTracks().then((charts) => setTracks(charts))
+    getChartTracks().then((charts) => setTracks(charts, 'charts'))
   }, [clearSearch, setTracks])
 
   // ESC inside the search clears the query and blurs the input — matches

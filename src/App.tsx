@@ -8,7 +8,7 @@ import { SceneManager } from './components/scene/SceneManager'
 import { FlyingVinyl } from './components/scene/FlyingVinyl'
 import { DustParticles } from './components/scene/DustParticles'
 import { useSceneStore } from './stores/sceneStore'
-import { useChartTracks } from './hooks/useDeezer'
+import { useChartTracks, useFetchMoreTracks } from './hooks/useDeezer'
 import { SearchBar } from './components/ui/SearchBar'
 import { TrackInfoPanel } from './components/ui/TrackInfoPanel'
 import { VinylHoverInfo } from './components/ui/VinylHoverInfo'
@@ -31,10 +31,11 @@ export default function App(): ReactElement {
   const canvasReady = tracks.length > 0
 
   const handleChartTracks = useCallback((tracks: Parameters<typeof setTracks>[0]) => {
-    setTracks(tracks)
+    setTracks(tracks, 'charts')
   }, [setTracks])
 
   useChartTracks(handleChartTracks)
+  useFetchMoreTracks()
   useVinylAnimation(ANIMATION_DURATION_MS)
   useDocumentTitle()
 

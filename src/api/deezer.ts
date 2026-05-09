@@ -26,16 +26,16 @@ async function fetchCached<T>(url: string): Promise<T> {
   return data
 }
 
-export async function searchTracks(query: string, limit = 25): Promise<DeezerTrack[]> {
+export async function searchTracks(query: string, limit = 25, index = 0): Promise<DeezerTrack[]> {
   const result = await fetchCached<DeezerSearchResponse>(
-    buildUrl('search', { q: query, limit: String(limit) }),
+    buildUrl('search', { q: query, limit: String(limit), index: String(index) }),
   )
   return result.data
 }
 
-export async function getChartTracks(limit = 50): Promise<DeezerTrack[]> {
+export async function getChartTracks(limit = 50, index = 0): Promise<DeezerTrack[]> {
   const result = await fetchCached<DeezerChartTracksResponse>(
-    buildUrl('chart/0/tracks', { limit: String(limit) }),
+    buildUrl('chart/0/tracks', { limit: String(limit), index: String(index) }),
   )
   return result.data
 }
