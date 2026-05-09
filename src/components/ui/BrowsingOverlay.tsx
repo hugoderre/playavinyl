@@ -1,6 +1,8 @@
 import type { ReactElement } from 'react'
 import { useSceneStore } from '../../stores/sceneStore'
 
+const isTouchDevice = typeof window !== 'undefined' && 'ontouchstart' in window
+
 export function BrowsingOverlay(): ReactElement | null {
   const sceneState = useSceneStore((s) => s.state)
   const tracks = useSceneStore((s) => s.tracks)
@@ -30,19 +32,33 @@ export function BrowsingOverlay(): ReactElement | null {
         {centerIdx + 1} / {tracks.length}
       </div> */}
 
-      {/* Scroll affordance — bottom-right. A vertical line with a pellet
-          drifting down on loop reads more like motion than the old
-          chevrons. Fades once the user takes the cue. */}
+      {/* Scroll / swipe affordance — bottom-right. Fades once the user takes the cue. */}
       <div
         className="absolute bottom-8 right-10 z-40 flex flex-col items-center gap-2 pointer-events-none transition-opacity duration-700"
         style={{ opacity: scrollPosition < 0.5 ? 0.6 : 0 }}
       >
-        <span className="text-white/55 text-[10px] uppercase tracking-[0.32em]">
-          scroll
-        </span>
-        <div className="relative h-7 w-px bg-white/15 overflow-hidden rounded-full">
-          <span className="scroll-pellet absolute left-1/2 -translate-x-1/2 size-1 -ml-[1.5px] rounded-full bg-white/85" />
-        </div>
+        {isTouchDevice ? (
+          /* Mobile: horizontal swipe hint */
+          <div className="flex flex-col items-center gap-1.5">
+            <div className="flex items-center gap-1">
+              <span className="swipe-arrow text-white/85 text-xs">←</span>
+              <span className="swipe-arrow-right text-white/85 text-xs">→</span>
+            </div>
+            <span className="text-white/55 text-[10px] uppercase tracking-[0.32em]">
+              swipe
+            </span>
+          </div>
+        ) : (
+          /* Desktop: vertical pellet */
+          <>
+            <span className="text-white/55 text-[10px] uppercase tracking-[0.32em]">
+              scroll
+            </span>
+            <div className="relative h-7 w-px bg-white/15 overflow-hidden rounded-full">
+              <span className="scroll-pellet absolute left-1/2 -translate-x-1/2 size-1 -ml-[1.5px] rounded-full bg-white/85" />
+            </div>
+          </>
+        )}
       </div>
     </>
   )

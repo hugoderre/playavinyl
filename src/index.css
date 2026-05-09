@@ -58,6 +58,24 @@ body {
   animation: scrollPellet 1.6s cubic-bezier(0.55, 0, 0.45, 1) infinite;
 }
 
+@keyframes swipeArrowLeft {
+  0%, 100% { transform: translateX(0); opacity: 0.85; }
+  50% { transform: translateX(-4px); opacity: 0.4; }
+}
+
+@keyframes swipeArrowRight {
+  0%, 100% { transform: translateX(0); opacity: 0.85; }
+  50% { transform: translateX(4px); opacity: 0.4; }
+}
+
+.swipe-arrow {
+  animation: swipeArrowLeft 1.6s ease-in-out infinite;
+}
+
+.swipe-arrow-right {
+  animation: swipeArrowRight 1.6s ease-in-out infinite;
+}
+
 /* Used by overlays that mount when a scene transition completes
    (TrackInfoPanel, BackToShelf) so they don't pop into existence. */
 @keyframes fadeInSoft {
