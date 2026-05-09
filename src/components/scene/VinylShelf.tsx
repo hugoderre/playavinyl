@@ -1,6 +1,7 @@
 import { useEffect, useRef, Suspense } from 'react'
 import type { ReactElement } from 'react'
-import { useThree, useFrame } from '@react-three/fiber'
+import { useThree, useFrame, useLoader } from '@react-three/fiber'
+import { TextureLoader } from 'three'
 import type { Group, PointLight } from 'three'
 import { VinylRecord } from './VinylRecord'
 import { useSceneStore } from '../../stores/sceneStore'
@@ -81,6 +82,12 @@ export function VinylShelf(): ReactElement | null {
   const heroHoverRef = useRef(false)
   const heroScaleRef = useRef(1)
   const heroGroupRef = useRef<Group>(null)
+
+  // Preload all cover textures as soon as the track list arrives so
+  // VinylRecord never suspends mid-scroll and causes a frame blackout.
+  useEffect(() => {
+    tracks.forEach((t) => useLoader.preload(TextureLoader, t.album.cover_big))
+  }, [tracks])
 
   useEffect(() => {
     if (sceneState !== 'browsing') return
@@ -199,7 +206,6 @@ export function VinylShelf(): ReactElement | null {
       {heroTrack && <HeroAtmosphere track={heroTrack} />}
 
       <group ref={breathRef}>
-      <Suspense fallback={null}>
         {renderItems.map(({ track, depth }) => {
           if (sceneState === 'animating' && track.id === selectedVinylId) return null
           const p = placementForDepth(depth)
@@ -210,21 +216,26 @@ export function VinylShelf(): ReactElement | null {
           // hint-only — clicking their peek edges would feel like an
           // off-by-one bug.
           const isHero = Math.abs(depth) < 0.5
+
+          // Each record gets its own Suspense boundary so an un-cached texture
+          // on one record only hides that record — not the entire shelf.
           const recordEl = (
-            <VinylRecord
-              track={track}
-              position={[p.x, p.y, p.z]}
-              rotation={[0, p.rotY, 0]}
-              opacity={p.opacity}
-              interactive={isHero && sceneState === 'browsing'}
-              onClick={
-                isHero && sceneState === 'browsing'
-                  ? () => selectVinyl(track.id)
-                  : undefined
-              }
-              onPointerEnter={isHero ? () => { heroHoverRef.current = true } : undefined}
-              onPointerLeave={isHero ? () => { heroHoverRef.current = false } : undefined}
-            />
+            <Suspense fallback={null}>
+              <VinylRecord
+                track={track}
+                position={[p.x, p.y, p.z]}
+                rotation={[0, p.rotY, 0]}
+                opacity={p.opacity}
+                interactive={isHero && sceneState === 'browsing'}
+                onClick={
+                  isHero && sceneState === 'browsing'
+                    ? () => selectVinyl(track.id)
+                    : undefined
+                }
+                onPointerEnter={isHero ? () => { heroHoverRef.current = true } : undefined}
+                onPointerLeave={isHero ? () => { heroHoverRef.current = false } : undefined}
+              />
+            </Suspense>
           )
 
           // When isHero flips back to false on scroll, force scale back to 1 —
@@ -240,7 +251,6 @@ export function VinylShelf(): ReactElement | null {
             </group>
           )
         })}
-      </Suspense>
       </group>
     </group>
   )

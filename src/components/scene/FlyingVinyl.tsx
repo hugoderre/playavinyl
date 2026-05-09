@@ -4,6 +4,7 @@ import { useFrame, useLoader } from '@react-three/fiber'
 import type { Group, Mesh } from 'three'
 import { TextureLoader, Vector3, DoubleSide } from 'three'
 import type { DeezerTrack } from '../../types'
+import { useDominantColor, rgbToHex } from '../../hooks/useDominantColor'
 
 interface FlyingVinylProps {
   track: DeezerTrack
@@ -57,6 +58,11 @@ export function FlyingVinyl({
 
   // Match VinylRecord — cover_big stays sharp through the whole flight.
   const coverTexture = useLoader(TextureLoader, track.album.cover_big)
+  // The trailing halo carries the cover's dominant color, so the vinyl is
+  // literally the source of its own light. Cached by HeroAtmosphere already
+  // (same URL), so this is an instant cache hit, no extraction stall.
+  const dominant = useDominantColor(track.album.cover_big)
+  const tintHex = dominant ? rgbToHex(dominant) : '#ffb066'
 
   useFrame(() => {
     const elapsed = Date.now() - startTime
@@ -107,8 +113,11 @@ export function FlyingVinyl({
     <group ref={groupRef}>
       {/* Travelling warm key — the vinyl carries its own light through the void */}
       <pointLight position={[0, 0, 0.4]} intensity={9} color="#fff0d8" distance={2.5} decay={1.8} />
-      {/* Tinted halo behind it so it reads as a comet */}
-      <pointLight position={[0, 0, -0.35]} intensity={6} color="#ffb066" distance={2} decay={1.6} />
+      {/* Trailing halo tinted to the cover's dominant color. As the vinyl
+          approaches the platter this halo sweeps across the turntable and
+          starts tinting the room — so the static atmosphere doesn't have
+          to "appear from nowhere", the vinyl is bringing the color in. */}
+      <pointLight position={[0, 0, -0.35]} intensity={7} color={tintHex} distance={2.2} decay={1.6} />
 
       {/* Sleeve with cover art — self-emissive so the cover stays readable mid-flight */}
       <mesh ref={sleeveRef}>
