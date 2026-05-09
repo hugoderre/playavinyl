@@ -13,6 +13,7 @@ export function useDeezerSearch(
   onLoading: (loading: boolean) => void,
 ): void {
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const generationRef = useRef(0)
 
   useEffect(() => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current)
@@ -21,8 +22,11 @@ export function useDeezerSearch(
 
     onLoading(true)
 
+    const gen = ++generationRef.current
+
     timeoutRef.current = setTimeout(async () => {
       const results = await searchTracks(query)
+      if (gen !== generationRef.current) return
       onResults(results)
       onLoading(false)
     }, 300)
@@ -33,15 +37,21 @@ export function useDeezerSearch(
   }, [query, onResults, onLoading])
 }
 
-export function useChartTracks(onResults: (tracks: DeezerTrack[]) => void): void {
+export function useChartTracks(
+  onResults: (tracks: DeezerTrack[]) => void,
+  onError?: () => void,
+): void {
   const loaded = useRef(false)
 
   useEffect(() => {
     if (loaded.current) return
     loaded.current = true
 
-    getChartTracks().then(onResults)
-  }, [onResults])
+    getChartTracks().then(onResults).catch(() => {
+      loaded.current = false
+      onError?.()
+    })
+  }, [onResults, onError])
 }
 
 export { getAlbumTracks }

@@ -22,6 +22,7 @@ const ANIMATION_DURATION_MS = 4000
 
 export default function App(): ReactElement {
   const setTracks = useSceneStore((s) => s.setTracks)
+  const setLoadError = useSceneStore((s) => s.setLoadError)
   const sceneState = useSceneStore((s) => s.state)
   const selectedVinylId = useSceneStore((s) => s.selectedVinylId)
   const tracks = useSceneStore((s) => s.tracks)
@@ -34,7 +35,9 @@ export default function App(): ReactElement {
     setTracks(tracks, 'charts')
   }, [setTracks])
 
-  useChartTracks(handleChartTracks)
+  const handleChartError = useCallback(() => setLoadError(true), [setLoadError])
+
+  useChartTracks(handleChartTracks, handleChartError)
   useFetchMoreTracks()
   useVinylAnimation(ANIMATION_DURATION_MS)
   useDocumentTitle()

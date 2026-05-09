@@ -53,6 +53,12 @@ export function useAudio(): {
         stop()
       })
 
+      audio.addEventListener('error', () => {
+        cancelAnimationFrame(sharedAnimFrame)
+        sharedAudio = null
+        stop()
+      })
+
       audio
         .play()
         .then(() => {

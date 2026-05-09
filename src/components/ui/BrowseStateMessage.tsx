@@ -8,6 +8,7 @@ import { useSearchStore } from '../../stores/searchStore'
 export function BrowseStateMessage(): ReactElement | null {
   const sceneState = useSceneStore((s) => s.state)
   const tracks = useSceneStore((s) => s.tracks)
+  const loadError = useSceneStore((s) => s.loadError)
   const query = useSearchStore((s) => s.query)
   const isLoading = useSearchStore((s) => s.isLoading)
 
@@ -23,7 +24,16 @@ export function BrowseStateMessage(): ReactElement | null {
       }}
       aria-hidden={!shouldShow}
     >
-      {isEmptyResult ? (
+      {loadError ? (
+        <div className="text-center px-8">
+          <p className="text-white/85 text-base font-medium tracking-tight">
+            Impossible de joindre Deezer
+          </p>
+          <p className="text-white/35 text-[12px] mt-2">
+            Vérifiez votre connexion et rechargez la page.
+          </p>
+        </div>
+      ) : isEmptyResult ? (
         <div className="text-center px-8">
           <p className="text-white/85 text-base font-medium tracking-tight">
             Aucun vinyle pour « {query} »

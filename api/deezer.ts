@@ -8,8 +8,18 @@ export default async function handler(
 ): Promise<void> {
   const { path, ...rest } = req.query
 
-  const pathStr = Array.isArray(path) ? path.join('/') : (path ?? '')
+  if (req.method !== 'GET') {
+    res.status(405).json({ error: 'Method not allowed' })
+    return
+  }
+
+  const pathStr = (Array.isArray(path) ? path.join('/') : (path ?? '')).replace(/^\/+/, '')
   const url = new URL(`/${pathStr}`, DEEZER_BASE)
+
+  if (url.hostname !== 'api.deezer.com') {
+    res.status(400).json({ error: 'Invalid path' })
+    return
+  }
 
   for (const [key, value] of Object.entries(rest)) {
     if (typeof value === 'string') {

@@ -11,6 +11,7 @@ interface SceneStoreState {
   isFetchingMore: boolean
   hasMore: boolean
   mode: 'charts' | 'search'
+  loadError: boolean
 
   setState: (state: SceneState) => void
   setScrollPosition: (position: number) => void
@@ -21,6 +22,7 @@ interface SceneStoreState {
   setAlbumTracks: (tracks: DeezerTrack[]) => void
   setFetchingMore: (v: boolean) => void
   setHasMore: (v: boolean) => void
+  setLoadError: (v: boolean) => void
 }
 
 export const useSceneStore = create<SceneStoreState>((set) => ({
@@ -33,6 +35,7 @@ export const useSceneStore = create<SceneStoreState>((set) => ({
   isFetchingMore: false,
   hasMore: true,
   mode: 'charts',
+  loadError: false,
 
   setState: (state) => set({ state }),
   setScrollPosition: (scrollPosition) =>
@@ -61,4 +64,5 @@ export const useSceneStore = create<SceneStoreState>((set) => ({
   setAlbumTracks: (albumTracks) => set({ albumTracks }),
   setFetchingMore: (isFetchingMore) => set({ isFetchingMore }),
   setHasMore: (hasMore) => set({ hasMore }),
+  setLoadError: (loadError) => set({ loadError }),
 }))
