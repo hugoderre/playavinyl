@@ -51,7 +51,13 @@ export function GenreSelector(): ReactElement | null {
   }
 
   return (
-    <div className="absolute top-[4.75rem] inset-x-0 z-40 overflow-x-auto no-scrollbar animate-fade-in-soft">
+    <div
+      className="absolute top-[4.75rem] inset-x-0 z-40 overflow-x-auto no-scrollbar animate-fade-in-soft"
+      style={{
+        maskImage: 'linear-gradient(to right, transparent 0, black 1rem, black calc(100% - 3rem), transparent 100%)',
+        WebkitMaskImage: 'linear-gradient(to right, transparent 0, black 1rem, black calc(100% - 3rem), transparent 100%)',
+      }}
+    >
       <div className="flex items-center gap-1 w-max mx-auto px-4">
       {GENRES.map((g) => {
         const isActive = activeId === g.id
