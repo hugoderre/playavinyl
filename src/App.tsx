@@ -51,6 +51,8 @@ export default function App(): ReactElement {
   useShareableUrl()
   useRelatedTracks()
 
+  const isMobile = window.innerWidth < 768
+
   const flyingTrack = tracks.find((t) => t.id === selectedVinylId) ?? null
 
   return (
@@ -92,19 +94,19 @@ export default function App(): ReactElement {
         <DustParticles
           center={[8, 0.85, 0.4]}
           radius={0.45}
-          count={18}
+          count={isMobile ? 40 : 18}
           color="#fff0d8"
-          size={0.028}
-          opacity={0.25}
+          size={isMobile ? 0.04 : 0.028}
+          opacity={isMobile ? 0.35 : 0.25}
         />
         {/* Dust around the hero record — atmosphere, not decoration */}
         <DustParticles
           center={[0, 0.1, 0.35]}
           radius={0.55}
-          count={22}
+          count={isMobile ? 50 : 22}
           color="#fff0d8"
-          size={0.022}
-          opacity={0.18}
+          size={isMobile ? 0.032 : 0.022}
+          opacity={isMobile ? 0.28 : 0.18}
         />
       </Canvas>
 
