@@ -1,11 +1,13 @@
 import type { ReactElement } from 'react'
 import { useCallback, useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useSearchStore } from '../../stores/searchStore'
 import { useSceneStore } from '../../stores/sceneStore'
 import { useDeezerSearch } from '../../hooks/useDeezer'
 import { getChartTracks } from '../../api/deezer'
 
 export function SearchBar(): ReactElement | null {
+  const { t } = useTranslation()
   const query = useSearchStore((s) => s.query)
   const setQuery = useSearchStore((s) => s.setQuery)
   const setResults = useSearchStore((s) => s.setResults)
@@ -103,8 +105,8 @@ export function SearchBar(): ReactElement | null {
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Rechercher un titre, un artiste"
-          aria-label="Rechercher"
+          placeholder={t('search.placeholder')}
+          aria-label={t('search.ariaLabel')}
           className="
             w-full h-full pl-12 pr-12
             bg-transparent
@@ -124,7 +126,7 @@ export function SearchBar(): ReactElement | null {
         {query && !isLoading && (
           <button
             onClick={handleClear}
-            aria-label="Effacer la recherche"
+            aria-label={t('search.clear')}
             className="
               absolute right-3 size-7 flex items-center justify-center rounded-full
               text-white/50 hover:text-white hover:bg-white/[0.06]

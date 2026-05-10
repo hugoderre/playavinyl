@@ -1,20 +1,14 @@
 import type { ReactElement } from 'react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useSceneStore } from '../../stores/sceneStore'
 import { useCrateStore } from '../../stores/crateStore'
 import { getGenreTracks } from '../../api/deezer'
 
-const GENRES = [
-  { id: 0, label: 'Charts' },
-  { id: 132, label: 'Pop' },
-  { id: 116, label: 'Hip-hop' },
-  { id: 152, label: 'Rock' },
-  { id: 129, label: 'Jazz' },
-  { id: 106, label: 'Électro' },
-  { id: 165, label: 'Soul' },
-] as const
+const GENRE_IDS = [0, 132, 116, 152, 129, 106, 165] as const
 
 export function GenreSelector(): ReactElement | null {
+  const { t } = useTranslation()
   const sceneState = useSceneStore((s) => s.state)
   const mode = useSceneStore((s) => s.mode)
   const currentGenreId = useSceneStore((s) => s.currentGenreId)
@@ -59,13 +53,13 @@ export function GenreSelector(): ReactElement | null {
       }}
     >
       <div className="flex items-center gap-1 w-max mx-auto px-4">
-      {GENRES.map((g) => {
-        const isActive = activeId === g.id
-        const isLoading = loadingId === g.id
+      {GENRE_IDS.map((id) => {
+        const isActive = activeId === id
+        const isLoading = loadingId === id
         return (
           <button
-            key={g.id}
-            onClick={() => { void handleGenre(g.id) }}
+            key={id}
+            onClick={() => { void handleGenre(id) }}
             disabled={isLoading}
             className={`
               px-3 py-1 rounded-full text-[11px] font-medium tracking-wide
@@ -77,7 +71,7 @@ export function GenreSelector(): ReactElement | null {
               ${isLoading ? 'opacity-50' : ''}
             `}
           >
-            {isLoading ? '·' : g.label}
+            {isLoading ? '·' : t(`genres.${id}`)}
           </button>
         )
       })}
@@ -119,7 +113,7 @@ export function GenreSelector(): ReactElement | null {
                 <circle cx="5" cy="5" r="4" stroke="currentColor" strokeWidth="1.1" />
                 <path d="M5 2.8V5L6.3 6.3" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-              Récents
+              {t('browse.recent')}
             </button>
           )}
         </>

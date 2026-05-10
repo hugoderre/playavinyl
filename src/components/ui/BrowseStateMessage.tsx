@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useSceneStore } from '../../stores/sceneStore'
 import { useSearchStore } from '../../stores/searchStore'
 
@@ -6,6 +7,7 @@ import { useSearchStore } from '../../stores/searchStore'
 // (tracks haven't arrived yet) and a search that returned nothing. Stays
 // mounted but fades opacity so the canvas fade-in handoff is seamless.
 export function BrowseStateMessage(): ReactElement | null {
+  const { t } = useTranslation()
   const sceneState = useSceneStore((s) => s.state)
   const tracks = useSceneStore((s) => s.tracks)
   const loadError = useSceneStore((s) => s.loadError)
@@ -27,26 +29,26 @@ export function BrowseStateMessage(): ReactElement | null {
       {loadError ? (
         <div className="text-center px-8">
           <p className="text-white/85 text-base font-medium tracking-tight">
-            Impossible de joindre Deezer
+            {t('browse.errorTitle')}
           </p>
           <p className="text-white/35 text-[12px] mt-2">
-            Vérifiez votre connexion et rechargez la page.
+            {t('browse.errorHint')}
           </p>
         </div>
       ) : isEmptyResult ? (
         <div className="text-center px-8">
           <p className="text-white/85 text-base font-medium tracking-tight">
-            Aucun vinyle pour « {query} »
+            {t('browse.emptyTitle', { query })}
           </p>
           <p className="text-white/35 text-[12px] mt-2">
-            Essayez un autre artiste, un autre titre.
+            {t('browse.emptyHint')}
           </p>
         </div>
       ) : (
         <div className="flex flex-col items-center gap-3">
           <span className="size-2 rounded-full bg-[var(--color-accent)] animate-pulse" />
           <p className="text-white/40 text-[11px] uppercase tracking-[0.3em]">
-            {isLoading ? 'Recherche…' : 'Chargement du bac'}
+            {isLoading ? t('browse.searching') : t('browse.loading')}
           </p>
         </div>
       )}

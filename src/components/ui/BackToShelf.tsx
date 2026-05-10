@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react'
 import { useCallback, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useSceneStore } from '../../stores/sceneStore'
 import { useAudio } from '../../hooks/useAudio'
 
@@ -7,6 +8,7 @@ import { useAudio } from '../../hooks/useAudio'
 // turntable. Top-left of the screen so it's where the user's eye naturally
 // lands first, with enough weight that it actually reads as a button.
 export function BackToShelf(): ReactElement | null {
+  const { t } = useTranslation()
   const sceneState = useSceneStore((s) => s.state)
   const clearSelection = useSceneStore((s) => s.clearSelection)
   const { stopPlayback } = useAudio()
@@ -45,7 +47,7 @@ export function BackToShelf(): ReactElement | null {
         transition-all
         animate-fade-in-soft
       "
-      aria-label="Retour au bac à vinyles"
+      aria-label={t('backToShelf.ariaLabel')}
     >
       <span
         className="
@@ -65,7 +67,7 @@ export function BackToShelf(): ReactElement | null {
         </svg>
       </span>
       <span className="text-[13px] font-medium tracking-tight">
-        Retour au bac
+        {t('backToShelf.label')}
       </span>
     </button>
   )

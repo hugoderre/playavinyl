@@ -1,17 +1,11 @@
 import type { ReactElement } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useSceneStore } from '../../stores/sceneStore'
 
 const isTouchDevice = typeof window !== 'undefined' && 'ontouchstart' in window
 
-const BAC_LABELS: Record<string, string> = {
-  charts: 'Charts',
-  search: '',
-  genre: '',
-  related: 'Dans la même veine',
-  crate: 'Récents',
-}
-
 export function BrowsingOverlay(): ReactElement | null {
+  const { t } = useTranslation()
   const sceneState = useSceneStore((s) => s.state)
   const tracks = useSceneStore((s) => s.tracks)
   const scrollPosition = useSceneStore((s) => s.scrollPosition)
@@ -25,21 +19,14 @@ export function BrowsingOverlay(): ReactElement | null {
   const current = tracks[centerIdx]
   if (!current) return null
 
-  // Pour le mode genre, le label vient du sélecteur de genres
-  const GENRE_LABELS: Record<number, string> = {
-    0: 'Charts',
-    132: 'Pop',
-    116: 'Hip-hop',
-    152: 'Rock',
-    129: 'Jazz',
-    106: 'Électro',
-    165: 'Soul',
-  }
   const bacLabel = mode === 'genre'
-    ? (GENRE_LABELS[currentGenreId] ?? '')
+    ? (t(`genres.${currentGenreId}`, '') as string)
     : mode === 'related' && relatedArtistName
       ? `~ ${relatedArtistName}`
-      : BAC_LABELS[mode] ?? ''
+      : mode === 'charts' ? t('modes.charts')
+      : mode === 'related' ? t('modes.related')
+      : mode === 'crate' ? t('modes.crate')
+      : ''
 
   return (
     <>

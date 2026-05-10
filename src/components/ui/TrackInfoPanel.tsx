@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { usePlayerStore } from '../../stores/playerStore'
 import { useSceneStore } from '../../stores/sceneStore'
 import { getAlbumTracks } from '../../hooks/useDeezer'
@@ -11,6 +12,7 @@ import type { DeezerTrack } from '../../types'
 const PREVIEW_DURATION = 30
 
 export function TrackInfoPanel(): ReactElement | null {
+  const { t } = useTranslation()
   const sceneState = useSceneStore((s) => s.state)
   const currentTrack = usePlayerStore((s) => s.currentTrack)
   const isPlaying = usePlayerStore((s) => s.isPlaying)
@@ -76,7 +78,7 @@ export function TrackInfoPanel(): ReactElement | null {
               style={{ backgroundColor: isPlaying ? accentColor : 'rgba(255,255,255,0.25)' }}
             />
             <span className="text-[10px] uppercase tracking-[0.22em] text-white/40">
-              {autoplayBlocked ? 'En pause' : isPlaying ? 'En lecture' : 'Terminé'}
+              {autoplayBlocked ? t('player.paused') : isPlaying ? t('player.playing') : t('player.finished')}
             </span>
           </div>
 
@@ -100,7 +102,7 @@ export function TrackInfoPanel(): ReactElement | null {
               <svg width="11" height="11" viewBox="0 0 12 12" fill="currentColor">
                 <path d="M3 2L10 6L3 10V2Z" />
               </svg>
-              Lancer la lecture
+              {t('player.play')}
             </button>
           )}
 
@@ -134,7 +136,7 @@ export function TrackInfoPanel(): ReactElement | null {
                 className="flex items-center justify-between w-full text-left cursor-pointer group"
               >
                 <span className="text-[10px] uppercase tracking-[0.22em] text-white/45 group-hover:text-white/80 transition-colors truncate">
-                  Album · {albumTracks.length} titres
+                  {t('player.albumTracks', { count: albumTracks.length })}
                 </span>
                 <svg
                   width="10"
@@ -207,7 +209,7 @@ export function TrackInfoPanel(): ReactElement | null {
                   <svg width="11" height="11" viewBox="0 0 12 12" fill="none" className="shrink-0">
                     <path d="M2 6L5 9L10 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
-                  Copié !
+                  {t('player.copied')}
                 </>
               ) : (
                 <>
@@ -215,7 +217,7 @@ export function TrackInfoPanel(): ReactElement | null {
                     <path d="M8.5 1.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM3 4.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM8.5 7.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Z" stroke="currentColor" strokeWidth="1.2"/>
                     <path d="M4.4 5.7l3.2-2.4M4.4 6.3l3.2 2.4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
                   </svg>
-                  Partager
+                  {t('player.share')}
                 </>
               )}
             </button>
