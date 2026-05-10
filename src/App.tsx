@@ -17,6 +17,8 @@ import { BackToShelf } from './components/ui/BackToShelf'
 import { BrowseStateMessage } from './components/ui/BrowseStateMessage'
 import { useVinylAnimation } from './hooks/useVinylAnimation'
 import { useDocumentTitle } from './hooks/useDocumentTitle'
+import { useTrackCrate } from './hooks/useTrackCrate'
+import { GenreSelector } from './components/ui/GenreSelector'
 
 const ANIMATION_DURATION_MS = 4000
 
@@ -41,6 +43,7 @@ export default function App(): ReactElement {
   useFetchMoreTracks()
   useVinylAnimation(ANIMATION_DURATION_MS)
   useDocumentTitle()
+  useTrackCrate()
 
   const flyingTrack = tracks.find((t) => t.id === selectedVinylId) ?? null
 
@@ -109,6 +112,7 @@ export default function App(): ReactElement {
       />
 
       <SearchBar />
+      <GenreSelector />
       <BrowsingOverlay />
       <BrowseStateMessage />
       <BackToShelf />

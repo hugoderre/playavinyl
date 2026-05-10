@@ -53,3 +53,11 @@ export async function getAlbumTracks(albumId: number): Promise<DeezerTrack[]> {
   )
   return result.data.filter(hasCover)
 }
+
+export async function getGenreTracks(genreId: number, limit = 50, index = 0): Promise<DeezerTrack[]> {
+  const path = genreId === 0 ? 'chart/0/tracks' : `chart/${genreId}/tracks`
+  const result = await fetchCached<DeezerChartTracksResponse>(
+    buildUrl(path, { limit: String(limit), index: String(index) }),
+  )
+  return result.data.filter(hasCover)
+}

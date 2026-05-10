@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { searchTracks, getChartTracks, getAlbumTracks } from '../api/deezer'
+import { searchTracks, getChartTracks, getAlbumTracks, getGenreTracks } from '../api/deezer'
 import type { DeezerTrack } from '../types'
 import { useSceneStore } from '../stores/sceneStore'
 import { useSearchStore } from '../stores/searchStore'
@@ -62,6 +62,7 @@ export function useFetchMoreTracks(): void {
   const isFetchingMore = useSceneStore((s) => s.isFetchingMore)
   const hasMore = useSceneStore((s) => s.hasMore)
   const mode = useSceneStore((s) => s.mode)
+  const currentGenreId = useSceneStore((s) => s.currentGenreId)
   const appendTracks = useSceneStore((s) => s.appendTracks)
   const setFetchingMore = useSceneStore((s) => s.setFetchingMore)
   const setHasMore = useSceneStore((s) => s.setHasMore)
@@ -74,9 +75,18 @@ export function useFetchMoreTracks(): void {
     setFetchingMore(true)
     const offset = tracks.length
 
-    const promise = mode === 'charts'
-      ? getChartTracks(PAGE_SIZE, offset)
-      : searchTracks(query, PAGE_SIZE, offset)
+    let promise: Promise<typeof tracks>
+    if (mode === 'charts') {
+      promise = getChartTracks(PAGE_SIZE, offset)
+    } else if (mode === 'genre') {
+      promise = getGenreTracks(currentGenreId, PAGE_SIZE, offset)
+    } else if (mode === 'crate') {
+      // La crate est bornée — pas de pagination.
+      setFetchingMore(false)
+      return
+    } else {
+      promise = searchTracks(query, PAGE_SIZE, offset)
+    }
 
     promise
       .then((newTracks) => {
@@ -85,5 +95,5 @@ export function useFetchMoreTracks(): void {
         setFetchingMore(false)
       })
       .catch(() => setFetchingMore(false))
-  }, [scrollPosition, tracks.length, isFetchingMore, hasMore, mode, query, appendTracks, setFetchingMore, setHasMore])
+  }, [scrollPosition, tracks.length, isFetchingMore, hasMore, mode, currentGenreId, query, appendTracks, setFetchingMore, setHasMore])
 }
