@@ -52,7 +52,7 @@ export function GenreSelector(): ReactElement | null {
 
   return (
     <div
-      className="absolute top-[4.75rem] inset-x-0 z-40 overflow-x-auto no-scrollbar animate-fade-in-soft"
+      className="absolute top-[5.5rem] inset-x-0 z-40 overflow-x-auto no-scrollbar animate-fade-in-soft"
       style={{
         maskImage: 'linear-gradient(to right, transparent 0, black 1rem, black calc(100% - 3rem), transparent 100%)',
         WebkitMaskImage: 'linear-gradient(to right, transparent 0, black 1rem, black calc(100% - 3rem), transparent 100%)',
