@@ -21,13 +21,15 @@ export function GenreSelector(): ReactElement | null {
   const setTracks = useSceneStore((s) => s.setTracks)
   const setGenreTracks = useSceneStore((s) => s.setGenreTracks)
   const setCrateTracks = useSceneStore((s) => s.setCrateTracks)
+  const loadRelatedAsBag = useSceneStore((s) => s.loadRelatedAsBag)
+  const relatedTracks = useSceneStore((s) => s.relatedTracks)
   const crateTrack = useCrateStore((s) => s.tracks)
 
   const [loadingId, setLoadingId] = useState<number | null>(null)
 
   if (sceneState !== 'browsing') return null
 
-  const activeId = mode === 'search' || mode === 'crate' ? null : currentGenreId
+  const activeId = mode === 'search' || mode === 'crate' || mode === 'related' ? null : currentGenreId
 
   async function handleGenre(genreId: number): Promise<void> {
     setLoadingId(genreId)
@@ -72,26 +74,51 @@ export function GenreSelector(): ReactElement | null {
         )
       })}
 
-      {crateTrack.length > 0 && (
+      {(crateTrack.length > 0 || relatedTracks.length > 0) && (
         <>
           <span className="text-white/15 text-xs mx-0.5">|</span>
-          <button
-            onClick={handleCrate}
-            className={`
-              flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-medium tracking-wide
-              transition-all duration-200 cursor-pointer
-              ${mode === 'crate'
-                ? 'bg-white/12 text-white/90 border border-white/20'
-                : 'text-white/35 hover:text-white/65 border border-transparent hover:border-white/10'
-              }
-            `}
-          >
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="shrink-0">
-              <circle cx="5" cy="5" r="4" stroke="currentColor" strokeWidth="1.1" />
-              <path d="M5 2.8V5L6.3 6.3" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            Récents
-          </button>
+
+          {relatedTracks.length > 0 && (
+            <button
+              onClick={loadRelatedAsBag}
+              className={`
+                flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-medium tracking-wide
+                transition-all duration-200 cursor-pointer
+                ${mode === 'related'
+                  ? 'bg-white/12 text-white/90 border border-white/20'
+                  : 'text-white/35 hover:text-white/65 border border-transparent hover:border-white/10'
+                }
+              `}
+            >
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="shrink-0">
+                <path d="M1.5 5C1.5 3.07 3.07 1.5 5 1.5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" />
+                <path d="M8.5 5C8.5 6.93 6.93 8.5 5 8.5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" />
+                <path d="M5 1.5L6.5 3M5 1.5L3.5 3" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M5 8.5L6.5 7M5 8.5L3.5 7" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Dans la même veine
+            </button>
+          )}
+
+          {crateTrack.length > 0 && (
+            <button
+              onClick={handleCrate}
+              className={`
+                flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-medium tracking-wide
+                transition-all duration-200 cursor-pointer
+                ${mode === 'crate'
+                  ? 'bg-white/12 text-white/90 border border-white/20'
+                  : 'text-white/35 hover:text-white/65 border border-transparent hover:border-white/10'
+                }
+              `}
+            >
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="shrink-0">
+                <circle cx="5" cy="5" r="4" stroke="currentColor" strokeWidth="1.1" />
+                <path d="M5 2.8V5L6.3 6.3" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Récents
+            </button>
+          )}
         </>
       )}
     </div>

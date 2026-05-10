@@ -40,18 +40,19 @@ export function useDeezerSearch(
 export function useChartTracks(
   onResults: (tracks: DeezerTrack[]) => void,
   onError?: () => void,
+  skip = false,
 ): void {
   const loaded = useRef(false)
 
   useEffect(() => {
-    if (loaded.current) return
+    if (skip || loaded.current) return
     loaded.current = true
 
     getChartTracks().then(onResults).catch(() => {
       loaded.current = false
       onError?.()
     })
-  }, [onResults, onError])
+  }, [onResults, onError, skip])
 }
 
 export { getAlbumTracks }
@@ -80,8 +81,8 @@ export function useFetchMoreTracks(): void {
       promise = getChartTracks(PAGE_SIZE, offset)
     } else if (mode === 'genre') {
       promise = getGenreTracks(currentGenreId, PAGE_SIZE, offset)
-    } else if (mode === 'crate') {
-      // La crate est bornée — pas de pagination.
+    } else if (mode === 'crate' || mode === 'related') {
+      // Bornés, pas de pagination.
       setFetchingMore(false)
       return
     } else {

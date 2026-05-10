@@ -18,6 +18,8 @@ import { BrowseStateMessage } from './components/ui/BrowseStateMessage'
 import { useVinylAnimation } from './hooks/useVinylAnimation'
 import { useDocumentTitle } from './hooks/useDocumentTitle'
 import { useTrackCrate } from './hooks/useTrackCrate'
+import { useShareableUrl } from './hooks/useShareableUrl'
+import { useRelatedTracks } from './hooks/useRelatedTracks'
 import { GenreSelector } from './components/ui/GenreSelector'
 
 const ANIMATION_DURATION_MS = 4000
@@ -39,11 +41,15 @@ export default function App(): ReactElement {
 
   const handleChartError = useCallback(() => setLoadError(true), [setLoadError])
 
-  useChartTracks(handleChartTracks, handleChartError)
+  // Si l'URL contient ?t=, useShareableUrl charge ce track — on laisse les charts de côté
+  const hasSharedTrack = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('t')
+  useChartTracks(handleChartTracks, handleChartError, hasSharedTrack)
   useFetchMoreTracks()
   useVinylAnimation(ANIMATION_DURATION_MS)
   useDocumentTitle()
   useTrackCrate()
+  useShareableUrl()
+  useRelatedTracks()
 
   const flyingTrack = tracks.find((t) => t.id === selectedVinylId) ?? null
 

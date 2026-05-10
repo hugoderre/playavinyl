@@ -61,3 +61,19 @@ export async function getGenreTracks(genreId: number, limit = 50, index = 0): Pr
   )
   return result.data.filter(hasCover)
 }
+
+export async function getTrack(trackId: number): Promise<DeezerTrack | null> {
+  try {
+    const track = await fetchCached<DeezerTrack>(buildUrl(`track/${trackId}`))
+    return hasCover(track) ? track : null
+  } catch {
+    return null
+  }
+}
+
+export async function getArtistRadio(artistId: number, limit = 25): Promise<DeezerTrack[]> {
+  const result = await fetchCached<{ data: DeezerTrack[] }>(
+    buildUrl(`artist/${artistId}/radio`, { limit: String(limit) }),
+  )
+  return result.data.filter(hasCover)
+}
