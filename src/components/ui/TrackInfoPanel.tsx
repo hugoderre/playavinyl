@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { usePlayerStore } from '../../stores/playerStore'
 import { useSceneStore } from '../../stores/sceneStore'
 import { getAlbumTracks } from '../../hooks/useDeezer'
@@ -21,6 +21,8 @@ export function TrackInfoPanel(): ReactElement | null {
   const selectVinyl = useSceneStore((s) => s.selectVinyl)
   const { resumePlayback } = useAudio()
   const [albumOpen, setAlbumOpen] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const dominantRgb = useDominantColor(currentTrack?.album.cover_big)
   const accentColor = dominantRgb ? rgbToHex(dominantRgb) : '#ffb066'
 
@@ -36,6 +38,17 @@ export function TrackInfoPanel(): ReactElement | null {
   useEffect(() => {
     setAlbumOpen(false)
   }, [currentTrack?.id])
+
+  const handleShare = useCallback((): void => {
+    if (!currentTrack) return
+    const shareUrl = `${window.location.origin}/?t=${currentTrack.id}`
+    const text = `${currentTrack.title_short} · ${currentTrack.artist.name}\n${shareUrl}`
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true)
+      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current)
+      copyTimeoutRef.current = setTimeout(() => setCopied(false), 2000)
+    }).catch(() => { /* clipboard indisponible */ })
+  }, [currentTrack])
 
   const handleTrackClick = useCallback(
     (track: DeezerTrack) => {
@@ -180,23 +193,50 @@ export function TrackInfoPanel(): ReactElement | null {
             </div>
           )}
 
-          {/* Deezer link */}
-          <a
-            href={currentTrack.link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 mt-6 text-white/35 text-[11px] hover:text-white/80 transition-colors"
-          >
-            Écouter en intégralité sur Deezer
-            <svg width="9" height="9" viewBox="0 0 10 10" fill="none" className="shrink-0">
-              <path
-                d="M3 3H7V7M7 3L3 7"
-                stroke="currentColor"
-                strokeWidth="1.4"
-                strokeLinecap="round"
-              />
-            </svg>
-          </a>
+          {/* Actions — partager + lien Deezer */}
+          <div className="mt-6 flex items-center justify-between gap-3">
+            <button
+              onClick={handleShare}
+              className={`
+                flex items-center gap-1.5 text-[11px] transition-colors cursor-pointer
+                ${copied ? 'text-white/70' : 'text-white/35 hover:text-white/70'}
+              `}
+            >
+              {copied ? (
+                <>
+                  <svg width="11" height="11" viewBox="0 0 12 12" fill="none" className="shrink-0">
+                    <path d="M2 6L5 9L10 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  Copié !
+                </>
+              ) : (
+                <>
+                  <svg width="11" height="11" viewBox="0 0 12 12" fill="none" className="shrink-0">
+                    <path d="M8.5 1.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM3 4.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM8.5 7.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Z" stroke="currentColor" strokeWidth="1.2"/>
+                    <path d="M4.4 5.7l3.2-2.4M4.4 6.3l3.2 2.4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+                  </svg>
+                  Partager
+                </>
+              )}
+            </button>
+
+            <a
+              href={currentTrack.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-white/35 text-[11px] hover:text-white/80 transition-colors"
+            >
+              Deezer
+              <svg width="9" height="9" viewBox="0 0 10 10" fill="none" className="shrink-0">
+                <path
+                  d="M3 3H7V7M7 3L3 7"
+                  stroke="currentColor"
+                  strokeWidth="1.4"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </a>
+          </div>
         </div>
       </div>
     </div>

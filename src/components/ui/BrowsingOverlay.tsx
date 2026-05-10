@@ -3,10 +3,20 @@ import { useSceneStore } from '../../stores/sceneStore'
 
 const isTouchDevice = typeof window !== 'undefined' && 'ontouchstart' in window
 
+const BAC_LABELS: Record<string, string> = {
+  charts: 'Charts',
+  search: '',
+  genre: '',
+  related: 'Dans la même veine',
+  crate: 'Récents',
+}
+
 export function BrowsingOverlay(): ReactElement | null {
   const sceneState = useSceneStore((s) => s.state)
   const tracks = useSceneStore((s) => s.tracks)
   const scrollPosition = useSceneStore((s) => s.scrollPosition)
+  const mode = useSceneStore((s) => s.mode)
+  const currentGenreId = useSceneStore((s) => s.currentGenreId)
 
   if (sceneState !== 'browsing' || tracks.length === 0) return null
 
@@ -14,10 +24,29 @@ export function BrowsingOverlay(): ReactElement | null {
   const current = tracks[centerIdx]
   if (!current) return null
 
+  // Pour le mode genre, le label vient du sélecteur de genres
+  const GENRE_LABELS: Record<number, string> = {
+    0: 'Charts',
+    132: 'Pop',
+    116: 'Hip-hop',
+    152: 'Rock',
+    129: 'Jazz',
+    106: 'Électro',
+    165: 'Soul',
+  }
+  const bacLabel = mode === 'genre'
+    ? (GENRE_LABELS[currentGenreId] ?? '')
+    : BAC_LABELS[mode] ?? ''
+
   return (
     <>
       {/* Title + artist — bottom-left */}
       <div className="absolute bottom-6 left-8 z-40 max-w-md pointer-events-none animate-fade-in-soft">
+        {bacLabel && (
+          <p className="text-white/30 text-[10px] uppercase tracking-[0.28em] mb-2">
+            {bacLabel}
+          </p>
+        )}
         <h1 className="text-[var(--color-text)] text-2xl font-bold leading-tight tracking-tight">
           {current.title_short}
         </h1>
@@ -25,12 +54,6 @@ export function BrowsingOverlay(): ReactElement | null {
           {current.artist.name}
         </p>
       </div>
-
-      {/* Counter — top-right */}
-      {/* Counter — debug only
-      <div className="absolute top-5 right-6 z-40 text-[var(--color-text-muted)] text-xs font-medium tracking-widest opacity-50 pointer-events-none animate-fade-in-soft">
-        {centerIdx + 1} / {tracks.length}
-      </div> */}
 
       {/* Scroll / swipe affordance — bottom-right. Fades once the user takes the cue. */}
       <div
