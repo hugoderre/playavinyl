@@ -1,0 +1,44 @@
+{
+  "backToShelf": {
+    "label": "Zurück zur Kiste",
+    "ariaLabel": "Zurück zur Vinyl-Kiste"
+  },
+  "search": {
+    "placeholder": "Titel oder Künstler suchen",
+    "ariaLabel": "Suchen",
+    "clear": "Suche löschen"
+  },
+  "browse": {
+    "loading": "Kiste wird geladen",
+    "searching": "Suche läuft…",
+    "recent": "Zuletzt",
+    "errorTitle": "Deezer nicht erreichbar",
+    "errorHint": "Verbindung prüfen und Seite neu laden.",
+    "emptyTitle": "Kein Vinyl für \"{{query}}\"",
+    "emptyHint": "Anderen Künstler oder Titel versuchen."
+  },
+  "player": {
+    "paused": "Pausiert",
+    "playing": "Wird abgespielt",
+    "finished": "Fertig",
+    "play": "Abspielen",
+    "share": "Teilen",
+    "copied": "Kopiert!",
+    "albumTracks_one": "Album · {{count}} Titel",
+    "albumTracks_other": "Album · {{count}} Titel"
+  },
+  "modes": {
+    "charts": "Charts",
+    "related": "Im gleichen Stil",
+    "crate": "Zuletzt"
+  },
+  "genres": {
+    "0": "Charts",
+    "132": "Pop",
+    "116": "Hip-hop",
+    "152": "Rock",
+    "129": "Jazz",
+    "106": "Elektro",
+    "165": "Soul"
+  }
+}

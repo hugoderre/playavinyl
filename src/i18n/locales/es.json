@@ -1,0 +1,44 @@
+{
+  "backToShelf": {
+    "label": "Volver al crate",
+    "ariaLabel": "Volver al crate de vinilos"
+  },
+  "search": {
+    "placeholder": "Buscar una canción, un artista",
+    "ariaLabel": "Buscar",
+    "clear": "Borrar búsqueda"
+  },
+  "browse": {
+    "loading": "Cargando crate",
+    "searching": "Buscando…",
+    "recent": "Recientes",
+    "errorTitle": "No se puede conectar con Deezer",
+    "errorHint": "Comprueba tu conexión y recarga la página.",
+    "emptyTitle": "Sin vinilos para \"{{query}}\"",
+    "emptyHint": "Prueba con otro artista o título."
+  },
+  "player": {
+    "paused": "En pausa",
+    "playing": "Reproduciendo",
+    "finished": "Finalizado",
+    "play": "Reproducir",
+    "share": "Compartir",
+    "copied": "¡Copiado!",
+    "albumTracks_one": "Álbum · {{count}} pista",
+    "albumTracks_other": "Álbum · {{count}} pistas"
+  },
+  "modes": {
+    "charts": "Charts",
+    "related": "En la misma onda",
+    "crate": "Recientes"
+  },
+  "genres": {
+    "0": "Charts",
+    "132": "Pop",
+    "116": "Hip-hop",
+    "152": "Rock",
+    "129": "Jazz",
+    "106": "Electro",
+    "165": "Soul"
+  }
+}
