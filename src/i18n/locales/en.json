@@ -1,0 +1,44 @@
+{
+  "backToShelf": {
+    "label": "Back to crate",
+    "ariaLabel": "Back to the vinyl crate"
+  },
+  "search": {
+    "placeholder": "Search a track, an artist",
+    "ariaLabel": "Search",
+    "clear": "Clear search"
+  },
+  "browse": {
+    "loading": "Loading crate",
+    "searching": "Searching…",
+    "recent": "Recent",
+    "errorTitle": "Can't reach Deezer",
+    "errorHint": "Check your connection and reload the page.",
+    "emptyTitle": "No vinyl for \"{{query}}\"",
+    "emptyHint": "Try another artist or track title."
+  },
+  "player": {
+    "paused": "Paused",
+    "playing": "Playing",
+    "finished": "Done",
+    "play": "Play",
+    "share": "Share",
+    "copied": "Copied!",
+    "albumTracks_one": "Album · {{count}} track",
+    "albumTracks_other": "Album · {{count}} tracks"
+  },
+  "modes": {
+    "charts": "Charts",
+    "related": "In the same vein",
+    "crate": "Recent"
+  },
+  "genres": {
+    "0": "Charts",
+    "132": "Pop",
+    "116": "Hip-hop",
+    "152": "Rock",
+    "129": "Jazz",
+    "106": "Electro",
+    "165": "Soul"
+  }
+}
