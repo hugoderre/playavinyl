@@ -51,7 +51,8 @@ export function GenreSelector(): ReactElement | null {
   }
 
   return (
-    <div className="absolute top-[4.75rem] left-1/2 -translate-x-1/2 z-40 flex items-center gap-1 animate-fade-in-soft">
+    <div className="absolute top-[4.75rem] inset-x-0 z-40 overflow-x-auto no-scrollbar animate-fade-in-soft">
+      <div className="flex items-center gap-1 w-max mx-auto px-4">
       {GENRES.map((g) => {
         const isActive = activeId === g.id
         const isLoading = loadingId === g.id
@@ -117,6 +118,7 @@ export function GenreSelector(): ReactElement | null {
           )}
         </>
       )}
+      </div>
     </div>
   )
 }
