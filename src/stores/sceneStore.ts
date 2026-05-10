@@ -13,6 +13,7 @@ interface SceneStoreState {
   mode: 'charts' | 'search' | 'genre' | 'crate' | 'related'
   currentGenreId: number
   relatedTracks: DeezerTrack[]
+  relatedArtistName: string
   loadError: boolean
 
   setState: (state: SceneState) => void
@@ -22,7 +23,7 @@ interface SceneStoreState {
   setTracks: (tracks: DeezerTrack[], mode?: 'charts' | 'search') => void
   setGenreTracks: (tracks: DeezerTrack[], genreId: number) => void
   setCrateTracks: (tracks: DeezerTrack[]) => void
-  storeRelatedTracks: (tracks: DeezerTrack[]) => void
+  storeRelatedTracks: (tracks: DeezerTrack[], artistName: string) => void
   loadRelatedAsBag: () => void
   appendTracks: (newTracks: DeezerTrack[]) => void
   setAlbumTracks: (tracks: DeezerTrack[]) => void
@@ -43,6 +44,7 @@ export const useSceneStore = create<SceneStoreState>((set) => ({
   mode: 'charts',
   currentGenreId: 0,
   relatedTracks: [],
+  relatedArtistName: '',
   loadError: false,
 
   setState: (state) => set({ state }),
@@ -67,7 +69,7 @@ export const useSceneStore = create<SceneStoreState>((set) => ({
     set({ tracks, scrollPosition: 0, isFetchingMore: false, hasMore: true, mode: 'genre', currentGenreId: genreId }),
   setCrateTracks: (tracks) =>
     set({ tracks, scrollPosition: 0, isFetchingMore: false, hasMore: false, mode: 'crate' }),
-  storeRelatedTracks: (relatedTracks) => set({ relatedTracks }),
+  storeRelatedTracks: (relatedTracks, relatedArtistName) => set({ relatedTracks, relatedArtistName }),
   loadRelatedAsBag: () =>
     set((s) => s.relatedTracks.length > 0
       ? { tracks: s.relatedTracks, scrollPosition: 0, isFetchingMore: false, hasMore: false, mode: 'related' }

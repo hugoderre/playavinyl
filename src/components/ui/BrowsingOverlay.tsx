@@ -17,6 +17,7 @@ export function BrowsingOverlay(): ReactElement | null {
   const scrollPosition = useSceneStore((s) => s.scrollPosition)
   const mode = useSceneStore((s) => s.mode)
   const currentGenreId = useSceneStore((s) => s.currentGenreId)
+  const relatedArtistName = useSceneStore((s) => s.relatedArtistName)
 
   if (sceneState !== 'browsing' || tracks.length === 0) return null
 
@@ -36,7 +37,9 @@ export function BrowsingOverlay(): ReactElement | null {
   }
   const bacLabel = mode === 'genre'
     ? (GENRE_LABELS[currentGenreId] ?? '')
-    : BAC_LABELS[mode] ?? ''
+    : mode === 'related' && relatedArtistName
+      ? `~ ${relatedArtistName}`
+      : BAC_LABELS[mode] ?? ''
 
   return (
     <>

@@ -13,10 +13,10 @@ export function useRelatedTracks(): void {
     if (!track) return
 
     // Fetch silencieux pendant que l'animation joue — prêt quand l'utilisateur revient
+    const artistName = track.artist.name
     getArtistRadio(track.artist.id).then((related) => {
-      // Exclure le track en cours pour ne pas le re-proposer en premier
       const filtered = related.filter((t) => t.id !== selectedVinylId)
-      if (filtered.length > 0) storeRelatedTracks(filtered)
+      if (filtered.length > 0) storeRelatedTracks(filtered, artistName)
     }).catch(() => { /* silencieux */ })
   }, [selectedVinylId, tracks, storeRelatedTracks])
 }

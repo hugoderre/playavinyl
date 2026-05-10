@@ -23,6 +23,7 @@ export function GenreSelector(): ReactElement | null {
   const setCrateTracks = useSceneStore((s) => s.setCrateTracks)
   const loadRelatedAsBag = useSceneStore((s) => s.loadRelatedAsBag)
   const relatedTracks = useSceneStore((s) => s.relatedTracks)
+  const relatedArtistName = useSceneStore((s) => s.relatedArtistName)
   const crateTrack = useCrateStore((s) => s.tracks)
 
   const [loadingId, setLoadingId] = useState<number | null>(null)
@@ -78,7 +79,7 @@ export function GenreSelector(): ReactElement | null {
         <>
           <span className="text-white/15 text-xs mx-0.5">|</span>
 
-          {relatedTracks.length > 0 && (
+          {relatedTracks.length > 0 && relatedArtistName && (
             <button
               onClick={loadRelatedAsBag}
               className={`
@@ -90,13 +91,8 @@ export function GenreSelector(): ReactElement | null {
                 }
               `}
             >
-              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="shrink-0">
-                <path d="M1.5 5C1.5 3.07 3.07 1.5 5 1.5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" />
-                <path d="M8.5 5C8.5 6.93 6.93 8.5 5 8.5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" />
-                <path d="M5 1.5L6.5 3M5 1.5L3.5 3" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M5 8.5L6.5 7M5 8.5L3.5 7" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              Dans la même veine
+              <span className="opacity-60">~</span>
+              {relatedArtistName}
             </button>
           )}
 
